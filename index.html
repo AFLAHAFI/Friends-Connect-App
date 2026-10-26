@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Friends Connect — Mobile OTP Login, Random Audio/Video Calls, Celebrities & Events</title>
+  <title>Friends Connect — Secure Role-Based Portal</title>
   <style>
     :root {
       color-scheme: dark;
@@ -31,7 +31,7 @@
       position: sticky;
       top: 0;
       z-index: 30;
-      background: rgba(13, 19, 34, 0.92);
+      background: rgba(13, 19, 34, 0.94);
       backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border);
       padding: 14px 24px;
@@ -54,22 +54,15 @@
     }
     .pill {
       display: inline-flex; align-items: center; gap: 6px;
-      font-size: 11px; font-weight: 700; padding: 3px 10px;
+      font-size: 11px; font-weight: 700; padding: 4px 11px;
       border-radius: 999px; background: rgba(59, 130, 246, 0.16);
       color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.35);
     }
-    .role-tabs {
-      display: flex; flex-wrap: wrap; gap: 6px;
-      background: #0b0f1a; padding: 6px; border-radius: 12px;
-      border: 1px solid var(--border);
+    .role-badge-locked {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: #0b0f1a; padding: 8px 16px; border-radius: 12px;
+      border: 1px solid #334155; font-size: 13px; font-weight: 700; color: #f8fafc;
     }
-    .tab-btn {
-      background: transparent; color: var(--muted); border: none;
-      padding: 8px 13px; border-radius: 8px; font-size: 12px;
-      font-weight: 600; cursor: pointer; transition: all 0.15s;
-    }
-    .tab-btn:hover { color: #fff; background: #1e293b; }
-    .tab-btn.active { background: var(--blue); color: #fff; }
     .wallet-badge {
       background: rgba(245, 158, 11, 0.14);
       border: 1px solid rgba(245, 158, 11, 0.4);
@@ -170,55 +163,86 @@
     }
     .login-card {
       width: 100%;
-      max-width: 440px;
+      max-width: 480px;
       background: var(--panel);
       border: 1px solid #334155;
       border-radius: 24px;
-      padding: 32px;
+      padding: 30px;
       box-shadow: 0 25px 60px rgba(0,0,0,0.65);
     }
+    .cred-list {
+      background: var(--panel-alt);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px;
+      margin-bottom: 18px;
+      font-size: 12px;
+    }
+    .cred-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 8px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .cred-row:hover { background: rgba(59, 130, 246, 0.15); }
     .hidden { display: none !important; }
   </style>
 </head>
 <body>
 
-  <!-- ==================== STEP 1: MOBILE NUMBER + DUMMY OTP LOGIN SCREEN ==================== -->
-  <div id="otpLoginScreen" class="login-screen">
+  <!-- ==================== LOGIN SCREEN (SHOWN ONLY WHEN NO SESSION COOKIE EXISTS) ==================== -->
+  <div id="otpLoginScreen" class="login-screen hidden">
     <div class="login-card">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
         <div class="logo">FC</div>
         <div>
           <h2 style="margin:0;font-size:21px;">Friends Connect</h2>
-          <p class="sub">Mobile Number + OTP Login</p>
+          <p class="sub">Role-Isolated Mobile Number + OTP Login</p>
         </div>
       </div>
 
-      <div style="background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.35);padding:12px;border-radius:12px;margin-bottom:18px;font-size:12px;color:#6ee7b7;">
-        <strong>Dummy OTP Ready:</strong> मोबाइल നമ്പറും ഡമ്മി OTP <code>123456</code> ഉം താഴെ ഓട്ടോമാറ്റിക്കായി പൂരിപ്പിച്ചിട്ടുണ്ട്. നേരിട്ട് <strong>"Verify OTP & Enter Website"</strong> ക്ലിക്ക് ചെയ്യുക!
+      <div class="cred-list">
+        <div style="color:#93c5fd;font-weight:700;margin-bottom:6px;">
+          🔑 Click any Demo Mobile Number below to auto-fill (OTP: <code>123456</code>):
+        </div>
+        <div class="cred-row" onclick="fillDemoPhone('+919876543210')">
+          <span>👤 <strong>Normal User</strong> (Arjun Nair)</span>
+          <code style="color:#6ee7b7;">+919876543210</code>
+        </div>
+        <div class="cred-row" onclick="fillDemoPhone('+919999900001')">
+          <span>⭐ <strong>Celebrity</strong> (Dulquer Sithara)</span>
+          <code style="color:#fcd34d;">+919999900001</code>
+        </div>
+        <div class="cred-row" onclick="fillDemoPhone('+919888800001')">
+          <span>🏢 <strong>Organization</strong> (Kochi Live Events)</span>
+          <code style="color:#93c5fd;">+919888800001</code>
+        </div>
+        <div class="cred-row" onclick="fillDemoPhone('+919777700001')">
+          <span>🎧 <strong>Customer Care</strong> (Rahul Support)</span>
+          <code style="color:#c4b5fd;">+919777700001</code>
+        </div>
+        <div class="cred-row" onclick="fillDemoPhone('+919000000001')">
+          <span>🛡️ <strong>Super Admin</strong> (Platform Admin)</span>
+          <code style="color:#fda4af;">+919000000001</code>
+        </div>
       </div>
 
-      <label style="font-size:12px;color:var(--muted);">Choose Account Role to Login</label>
-      <select id="loginRoleSelect" class="input">
-        <option value="NORMAL">1. Normal User (Arjun Nair)</option>
-        <option value="CELEBRITY">2. Celebrity Account (Dulquer Sithara)</option>
-        <option value="ORG">3. Organization (Kochi Live Arena Events)</option>
-        <option value="SUPPORT">4. Customer Care Support (Rahul)</option>
-        <option value="SUPER_ADMIN">5. Super Admin (Platform Control)</option>
-      </select>
+      <label style="font-size:12px;color:var(--muted);">Mobile Number (Determines your Account & Role)</label>
+      <input id="loginPhoneInput" class="input" type="tel" value="+919876543210" placeholder="Enter mobile number..." />
 
-      <label style="font-size:12px;color:var(--muted);">Mobile Number</label>
-      <input id="loginPhoneInput" class="input" type="tel" value="+91 98765 43210" />
+      <label style="font-size:12px;color:var(--muted);">6-Digit OTP / Dummy Password</label>
+      <input id="loginOtpInput" class="input" type="password" value="123456" style="letter-spacing:4px;font-weight:800;font-size:15px;color:#6ee7b7;" />
 
-      <label style="font-size:12px;color:var(--muted);">6-Digit Dummy OTP / Password</label>
-      <input id="loginOtpInput" class="input" type="text" value="123456" style="letter-spacing:4px;font-weight:800;font-size:15px;color:#6ee7b7;" />
-
-      <button class="btn btn-blue" style="width:100%;justify-content:center;padding:13px;font-size:14px;margin-top:6px;" onclick="completeOtpLogin()">
-        🔓 Verify OTP (123456) & Enter Website
+      <button class="btn btn-blue" style="width:100%;justify-content:center;padding:13px;font-size:14px;margin-top:4px;" onclick="completeOtpLogin()">
+        🔓 Sign In with OTP
       </button>
     </div>
   </div>
 
-  <!-- ==================== STEP 2: MAIN APPLICATION WORKSPACE ==================== -->
+  <!-- ==================== AUTHENTICATED WORKSPACE (STRICTLY LOCKED TO LOGGED-IN USER ROLE) ==================== -->
   <div id="mainAppContainer" class="hidden">
     <header>
       <div class="container header-row">
@@ -227,34 +251,33 @@
           <div>
             <div style="display:flex;align-items:center;gap:8px;">
               <strong style="font-size:17px;">Friends Connect</strong>
-              <span class="pill">WebRTC Audio & Video</span>
+              <span class="pill" id="activeRolePill">NORMAL USER</span>
             </div>
-            <div style="font-size:12px;color:var(--muted);">
-              Random Friend Calls • Celebrity Calls • Location Events • Support • Super Admin
+            <div style="font-size:12px;color:var(--muted);" id="activeUserSubtitle">
+              Logged in as Arjun Nair
             </div>
           </div>
         </div>
 
-        <div class="role-tabs">
-          <button class="tab-btn active" id="tab-NORMAL" onclick="switchRole('NORMAL', this)">1. Normal User</button>
-          <button class="tab-btn" id="tab-CELEBRITY" onclick="switchRole('CELEBRITY', this)">2. Celebrity Account</button>
-          <button class="tab-btn" id="tab-ORG" onclick="switchRole('ORG', this)">3. Organization (Events)</button>
-          <button class="tab-btn" id="tab-SUPPORT" onclick="switchRole('SUPPORT', this)">4. Customer Care</button>
-          <button class="tab-btn" id="tab-SUPER_ADMIN" onclick="switchRole('SUPER_ADMIN', this)">5. Super Admin</button>
+        <!-- Locked Session Badge (No Role Switching Allowed Without Sign Out) -->
+        <div class="role-badge-locked">
+          🔒 Session Active: <span id="lockedUserName" style="color:#60a5fa;">Arjun Nair</span>
+          <span style="color:var(--muted);font-weight:400;">|</span>
+          <span id="lockedUserPhone" style="font-family:monospace;font-size:12px;color:#6ee7b7;">+919876543210</span>
         </div>
 
         <div style="display:flex;align-items:center;gap:10px;">
-          <div class="wallet-badge">🪙 <span id="coinBalanceText">650</span> Coins</div>
-          <button class="btn btn-dark" style="padding:7px 12px;font-size:12px;" onclick="logoutToOtpScreen()">
-            📱 <span id="activePhoneLabel">+91 98765 43210</span> (Logout)
+          <div class="wallet-badge" id="headerWalletBadge">🪙 <span id="coinBalanceText">650</span> Coins</div>
+          <button class="btn btn-rose" style="padding:8px 14px;font-size:12px;" onclick="signOutSession()">
+            🚪 Sign Out
           </button>
         </div>
       </div>
     </header>
 
     <main class="container">
-      <!-- ==================== 1. NORMAL USER VIEW ==================== -->
-      <div id="role-NORMAL" class="role-view">
+      <!-- ==================== 1. NORMAL USER VIEW (ONLY VISIBLE TO NORMAL USERS) ==================== -->
+      <div id="role-NORMAL" class="role-view hidden">
         <div class="grid-3">
           <div class="card hero-card">
             <span class="badge-online">● 1,420 Friends Online Now</span>
@@ -434,7 +457,7 @@
         </div>
       </div>
 
-      <!-- ==================== 2. CELEBRITY ACCOUNT VIEW ==================== -->
+      <!-- ==================== 2. CELEBRITY ACCOUNT VIEW (ONLY VISIBLE TO CELEBRITY) ==================== -->
       <div id="role-CELEBRITY" class="role-view hidden">
         <div class="grid-3">
           <div class="card">
@@ -468,7 +491,7 @@
         </div>
       </div>
 
-      <!-- ==================== 3. ORGANIZATION VIEW ==================== -->
+      <!-- ==================== 3. ORGANIZATION VIEW (ONLY VISIBLE TO ORGANIZATION) ==================== -->
       <div id="role-ORG" class="role-view hidden">
         <div class="grid-2">
           <div class="card">
@@ -495,7 +518,7 @@
         </div>
       </div>
 
-      <!-- ==================== 4. CUSTOMER CARE SUPPORT VIEW ==================== -->
+      <!-- ==================== 4. CUSTOMER CARE SUPPORT VIEW (ONLY VISIBLE TO SUPPORT) ==================== -->
       <div id="role-SUPPORT" class="role-view hidden">
         <div class="grid-3">
           <div class="card">
@@ -506,7 +529,7 @@
             </p>
             <div style="background:var(--panel-alt);padding:14px;border-radius:12px;border:1px solid rgba(245,158,11,0.4);margin-bottom:10px;">
               <strong style="color:#fcd34d;font-size:12px;">★ VIP CELEBRITY — Dulquer Sithara</strong>
-              <p class="sub" style="margin:6px 0;"> October earnings payout verification</p>
+              <p class="sub" style="margin:6px 0;">October earnings payout verification</p>
               <button class="btn btn-blue" style="width:100%;justify-content:center;" onclick="startWebRtcCall('SUPPORT_AUDIO', 'Dulquer Sithara (Celebrity Support)', 0)">
                 🎙️ Start Audio-Only Support Call
               </button>
@@ -534,12 +557,12 @@
         </div>
       </div>
 
-      <!-- ==================== 5. SUPER ADMIN VIEW ==================== -->
+      <!-- ==================== 5. SUPER ADMIN VIEW (ONLY VISIBLE TO SUPER ADMIN) ==================== -->
       <div id="role-SUPER_ADMIN" class="role-view hidden">
         <div class="card">
           <h2>Super Admin — Platform Control, Blocks & Granular Call Restrictions</h2>
           <p class="sub">
-            Block accounts or selectively toggle Random Audio, Random Video, or Celebrity Call permissions in real time. Try unchecking a permission below and testing it in the Normal User tab!
+            Block accounts or selectively toggle Random Audio, Random Video, or Celebrity Call permissions across the platform.
           </p>
           <table>
             <thead>
@@ -555,12 +578,12 @@
             </thead>
             <tbody>
               <tr>
-                <td><strong>Arjun Nair</strong><br/><small style="color:var(--muted);">+91 98765 43210</small></td>
+                <td><strong>Arjun Nair</strong><br/><small style="color:var(--muted);">+919876543210</small></td>
                 <td>NORMAL</td>
                 <td><span id="userStatusBadge" class="badge-online">ACTIVE</span></td>
-                <td><input type="checkbox" id="permRandomAudio" checked onchange="showToast('Updated Random Audio permission')" /></td>
-                <td><input type="checkbox" id="permRandomVideo" checked onchange="showToast('Updated Random Video permission')" /></td>
-                <td><input type="checkbox" id="permCelebCall" checked onchange="showToast('Updated Celebrity Call permission')" /></td>
+                <td><input type="checkbox" id="permRandomAudio" checked onchange="saveModerationState('Updated Random Audio permission')" /></td>
+                <td><input type="checkbox" id="permRandomVideo" checked onchange="saveModerationState('Updated Random Video permission')" /></td>
+                <td><input type="checkbox" id="permCelebCall" checked onchange="saveModerationState('Updated Celebrity Call permission')" /></td>
                 <td><button class="btn btn-rose" style="padding:6px 12px;font-size:12px;" onclick="toggleBlockUser()">Block / Unblock</button></td>
               </tr>
             </tbody>
@@ -597,6 +620,19 @@
   <div id="toast" class="toast"></div>
 
   <script>
+    // Account Directory Mapped Strictly by Mobile Number
+    const ACCOUNT_DIRECTORY = {
+      '+919876543210': { role: 'NORMAL', name: 'Arjun Nair', roleLabel: 'NORMAL USER', showWallet: true },
+      '+919999900001': { role: 'CELEBRITY', name: 'Dulquer Sithara ✔', roleLabel: 'VERIFIED CELEBRITY', showWallet: false },
+      '+919888800001': { role: 'ORG', name: 'Kochi Live Arena Events', roleLabel: 'ORGANIZATION PARTNER', showWallet: false },
+      '+919777700001': { role: 'SUPPORT', name: 'Rahul (Customer Care)', roleLabel: 'CUSTOMER CARE SUPPORT', showWallet: false },
+      '+919000000001': { role: 'SUPER_ADMIN', name: 'Platform Super Admin', roleLabel: 'SUPER ADMIN', showWallet: false }
+    };
+
+    const SESSION_COOKIE_KEY = 'fc_auth_session';
+    const SESSION_STORAGE_KEY = 'fc_auth_session_v1';
+    const MODERATION_STORAGE_KEY = 'fc_moderation_v1';
+
     let coins = 650;
     let userBlocked = false;
     let localStream = null;
@@ -606,30 +642,160 @@
     let audioMuted = false;
     let videoEnabled = false;
     let videoPermitted = false;
+    let currentSession = null;
+
+    // Cookie & Storage Helpers
+    function setSessionCookieAndStorage(sessionObj) {
+      const encoded = encodeURIComponent(JSON.stringify(sessionObj));
+      const expires = new Date(Date.now() + 7 * 86400 * 1000).toUTCString();
+      document.cookie = SESSION_COOKIE_KEY + '=' + encoded + '; expires=' + expires + '; path=/; SameSite=Lax';
+      try {
+        localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(sessionObj));
+      } catch (e) {}
+    }
+
+    function getActiveSession() {
+      // 1. Check Cookie first
+      const match = document.cookie.split('; ').find(row => row.startsWith(SESSION_COOKIE_KEY + '='));
+      if (match) {
+        try {
+          return JSON.parse(decodeURIComponent(match.split('=')[1]));
+        } catch (e) {}
+      }
+      // 2. Fallback to localStorage
+      try {
+        const raw = localStorage.getItem(SESSION_STORAGE_KEY);
+        if (raw) return JSON.parse(raw);
+      } catch (e) {}
+      return null;
+    }
+
+    function clearSessionCookieAndStorage() {
+      document.cookie = SESSION_COOKIE_KEY + '=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax';
+      try {
+        localStorage.removeItem(SESSION_STORAGE_KEY);
+      } catch (e) {}
+    }
+
+    function fillDemoPhone(phone) {
+      document.getElementById('loginPhoneInput').value = phone;
+      document.getElementById('loginOtpInput').value = '123456';
+    }
 
     function completeOtpLogin() {
-      const phone = document.getElementById('loginPhoneInput').value || '+91 98765 43210';
-      const otp = document.getElementById('loginOtpInput').value;
-      const role = document.getElementById('loginRoleSelect').value;
+      const rawPhone = (document.getElementById('loginPhoneInput').value || '').replace(/\\s+/g, '');
+      const otp = (document.getElementById('loginOtpInput').value || '').trim();
 
-      if (!otp) {
-        return showToast('Please enter Dummy OTP 123456');
+      if (otp !== '123456') {
+        return showToast('Invalid OTP! Use Dummy OTP: 123456');
       }
 
-      document.getElementById('activePhoneLabel').textContent = phone;
+      const account = ACCOUNT_DIRECTORY[rawPhone] || {
+        role: 'NORMAL',
+        name: 'User ' + rawPhone.slice(-4),
+        roleLabel: 'NORMAL USER',
+        showWallet: true
+      };
+
+      const sessionObj = {
+        phone: rawPhone || '+919876543210',
+        role: account.role,
+        name: account.name,
+        roleLabel: account.roleLabel,
+        showWallet: account.showWallet,
+        loggedInAt: Date.now()
+      };
+
+      setSessionCookieAndStorage(sessionObj);
+      // Push history guard so pressing Back button never logs out or returns to login screen
+      history.pushState({ authenticated: true }, '', window.location.pathname);
+      renderAuthenticatedSession(sessionObj);
+      showToast('Signed in as ' + sessionObj.name + ' (' + sessionObj.roleLabel + ')');
+    }
+
+    function renderAuthenticatedSession(session) {
+      currentSession = session;
+
+      // Hide Login Screen, Show Authenticated App
       document.getElementById('otpLoginScreen').classList.add('hidden');
       document.getElementById('mainAppContainer').classList.remove('hidden');
 
-      const tabBtn = document.getElementById('tab-' + role);
-      if (tabBtn) {
-        switchRole(role, tabBtn);
+      // Update Header Info
+      document.getElementById('activeRolePill').textContent = session.roleLabel;
+      document.getElementById('activeUserSubtitle').textContent = 'Strict Role-Isolated Session • ' + session.name;
+      document.getElementById('lockedUserName').textContent = session.name;
+      document.getElementById('lockedUserPhone').textContent = session.phone;
+      document.getElementById('headerWalletBadge').style.display = session.showWallet ? 'block' : 'none';
+
+      // Strictly hide ALL other role workspaces and ONLY show the logged-in user's role view
+      document.querySelectorAll('.role-view').forEach(el => el.classList.add('hidden'));
+      const targetView = document.getElementById('role-' + session.role);
+      if (targetView) {
+        targetView.classList.remove('hidden');
       }
-      showToast('Logged in via Mobile OTP (' + phone + ')!');
     }
 
-    function logoutToOtpScreen() {
+    function signOutSession() {
+      if (localStream || peerConnection) {
+        endWebRtcCall();
+      }
+      currentSession = null;
+      clearSessionCookieAndStorage();
       document.getElementById('mainAppContainer').classList.add('hidden');
       document.getElementById('otpLoginScreen').classList.remove('hidden');
+      showToast('Signed out successfully. Session cookie cleared.');
+    }
+
+    // Prevent Browser Back Button from logging out an active session
+    window.addEventListener('popstate', function () {
+      const existing = getActiveSession();
+      if (existing) {
+        history.pushState({ authenticated: true }, '', window.location.pathname);
+        renderAuthenticatedSession(existing);
+        showToast('Session is still active. Click "Sign Out" button to switch accounts.');
+      }
+    });
+
+    // Restore Session Automatically on Page Load / Refresh
+    window.addEventListener('DOMContentLoaded', function () {
+      loadModerationState();
+      const existing = getActiveSession();
+      if (existing) {
+        history.replaceState({ authenticated: true }, '', window.location.pathname);
+        history.pushState({ authenticated: true }, '', window.location.pathname);
+        renderAuthenticatedSession(existing);
+      } else {
+        document.getElementById('otpLoginScreen').classList.remove('hidden');
+      }
+    });
+
+    function saveModerationState(msg) {
+      const state = {
+        userBlocked: userBlocked,
+        permRandomAudio: document.getElementById('permRandomAudio').checked,
+        permRandomVideo: document.getElementById('permRandomVideo').checked,
+        permCelebCall: document.getElementById('permCelebCall').checked
+      };
+      try {
+        localStorage.setItem(MODERATION_STORAGE_KEY, JSON.stringify(state));
+      } catch (e) {}
+      if (msg) showToast(msg);
+    }
+
+    function loadModerationState() {
+      try {
+        const raw = localStorage.getItem(MODERATION_STORAGE_KEY);
+        if (!raw) return;
+        const state = JSON.parse(raw);
+        userBlocked = !!state.userBlocked;
+        document.getElementById('permRandomAudio').checked = state.permRandomAudio !== false;
+        document.getElementById('permRandomVideo').checked = state.permRandomVideo !== false;
+        document.getElementById('permCelebCall').checked = state.permCelebCall !== false;
+        const badge = document.getElementById('userStatusBadge');
+        badge.textContent = userBlocked ? 'BLOCKED' : 'ACTIVE';
+        badge.style.background = userBlocked ? 'rgba(225,29,72,0.2)' : 'rgba(16,185,129,0.18)';
+        badge.style.color = userBlocked ? '#fda4af' : '#6ee7b7';
+      } catch (e) {}
     }
 
     function showToast(msg) {
@@ -637,13 +803,6 @@
       el.textContent = msg;
       el.style.display = 'block';
       setTimeout(() => { el.style.display = 'none'; }, 3500);
-    }
-
-    function switchRole(role, btn) {
-      document.querySelectorAll('.role-view').forEach(v => v.classList.add('hidden'));
-      document.getElementById('role-' + role).classList.remove('hidden');
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
     }
 
     function rechargeCoins(amount) {
@@ -659,11 +818,12 @@
       badge.textContent = userBlocked ? 'BLOCKED' : 'ACTIVE';
       badge.style.background = userBlocked ? 'rgba(225,29,72,0.2)' : 'rgba(16,185,129,0.18)';
       badge.style.color = userBlocked ? '#fda4af' : '#6ee7b7';
-      showToast('User account is now ' + (userBlocked ? 'BLOCKED' : 'ACTIVE'));
+      saveModerationState('User account is now ' + (userBlocked ? 'BLOCKED' : 'ACTIVE'));
     }
 
     async function startWebRtcCall(callType, peerName, ratePerMin) {
-      if (userBlocked) {
+      loadModerationState();
+      if (userBlocked && currentSession && currentSession.role === 'NORMAL') {
         return showToast('Your account is BLOCKED by Super Admin. Contact Customer Care.');
       }
       if (callType === 'RANDOM_AUDIO' && !document.getElementById('permRandomAudio').checked) {
@@ -806,7 +966,7 @@
       const div = document.createElement('div');
       div.className = 'card event-card';
       div.setAttribute('data-city', city);
-      div.innerHTML = '<div style="display:flex;justify-content:space-between;font-size:12px;color:#60a5fa;font-weight:700;margin-bottom:6px;"><span>🏢 Verified Org</span><span>📍 ' + city + '</span></div><h3>' + title + '</h3><p class="sub" style="margin:6px 0 12px;">Newly published organization event.</p><div style="display:flex;justify-content:space-between;align-items:center;background:var(--panel-alt);padding:12px;border-radius:12px;border:1px solid var(--border);"><div><strong style="font-size:13px;">Standard Entry Pass</strong><div style="font-size:12px;color:var(--muted);">₹' + price + ' • 250 seats left</div></div><button class="btn btn-emerald" onclick="bookTicket(\'' + title.replace(/'/g, "") + '\', ' + price + ')">🎟️ Book Ticket (₹' + price + ')</button></div>';
+      div.innerHTML = '<div style="display:flex;justify-content:space-between;font-size:12px;color:#60a5fa;font-weight:700;margin-bottom:6px;"><span>🏢 Verified Org</span><span>📍 ' + city + '</span></div><h3>' + title + '</h3><p class="sub" style="margin:6px 0 12px;">Newly published organization event.</p><div style="display:flex;justify-content:space-between;align-items:center;background:var(--panel-alt);padding:12px;border-radius:12px;border:1px solid var(--border);"><div><strong style="font-size:13px;">Standard Entry Pass</strong><div style="font-size:12px;color:var(--muted);">₹' + price + ' • 250 seats left</div></div><button class="btn btn-emerald" onclick="bookTicket(\\'' + title.replace(/'/g, "") + '\\', ' + price + ')">🎟️ Book Ticket (₹' + price + ')</button></div>';
       document.getElementById('eventsListContainer').prepend(div);
       document.getElementById('orgEventTitle').value = '';
       showToast('Published Event: ' + title);
