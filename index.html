@@ -193,8 +193,8 @@
 </head>
 <body>
 
-  <!-- ==================== LOGIN SCREEN (SHOWN ONLY WHEN NO SESSION COOKIE EXISTS) ==================== -->
-  <div id="otpLoginScreen" class="login-screen hidden">
+  <!-- ==================== LOGIN SCREEN (VISIBLE IMMEDIATELY BY DEFAULT) ==================== -->
+  <div id="otpLoginScreen" class="login-screen">
     <div class="login-card">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
         <div class="logo">FC</div>
@@ -683,7 +683,7 @@
     }
 
     function completeOtpLogin() {
-      const rawPhone = (document.getElementById('loginPhoneInput').value || '').replace(/\\s+/g, '');
+      const rawPhone = (document.getElementById('loginPhoneInput').value || '').replace(/\s+/g, '');
       const otp = (document.getElementById('loginOtpInput').value || '').trim();
 
       if (otp !== '123456') {
@@ -966,7 +966,8 @@
       const div = document.createElement('div');
       div.className = 'card event-card';
       div.setAttribute('data-city', city);
-      div.innerHTML = '<div style="display:flex;justify-content:space-between;font-size:12px;color:#60a5fa;font-weight:700;margin-bottom:6px;"><span>🏢 Verified Org</span><span>📍 ' + city + '</span></div><h3>' + title + '</h3><p class="sub" style="margin:6px 0 12px;">Newly published organization event.</p><div style="display:flex;justify-content:space-between;align-items:center;background:var(--panel-alt);padding:12px;border-radius:12px;border:1px solid var(--border);"><div><strong style="font-size:13px;">Standard Entry Pass</strong><div style="font-size:12px;color:var(--muted);">₹' + price + ' • 250 seats left</div></div><button class="btn btn-emerald" onclick="bookTicket(\\'' + title.replace(/'/g, "") + '\\', ' + price + ')">🎟️ Book Ticket (₹' + price + ')</button></div>';
+      const safeTitle = title.replace(/'/g, '');
+      div.innerHTML = `<div style="display:flex;justify-content:space-between;font-size:12px;color:#60a5fa;font-weight:700;margin-bottom:6px;"><span>🏢 Verified Org</span><span>📍 ${city}</span></div><h3>${safeTitle}</h3><p class="sub" style="margin:6px 0 12px;">Newly published organization event.</p><div style="display:flex;justify-content:space-between;align-items:center;background:var(--panel-alt);padding:12px;border-radius:12px;border:1px solid var(--border);"><div><strong style="font-size:13px;">Standard Entry Pass</strong><div style="font-size:12px;color:var(--muted);">₹${price} • 250 seats left</div></div><button class="btn btn-emerald" onclick="bookTicket('${safeTitle}', ${price})">🎟️ Book Ticket (₹${price})</button></div>`;
       document.getElementById('eventsListContainer').prepend(div);
       document.getElementById('orgEventTitle').value = '';
       showToast('Published Event: ' + title);
