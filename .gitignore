@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build outputs
+dist/
+**/dist/
+.next/
+**/.next/
+out/
+build/
+**/build/
+.build/
+**/.build/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# OS & IDE files
+.DS_Store
+**/.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+DerivedData/
+*.xcuserdata
+local.properties
+.gradle/
+**/.gradle/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
