@@ -1,42 +1,115 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Friends Connect — Secure Role-Based Portal</title>
+  <title>Friends Connect — Social Audio & Video, Celebrities & Live Events</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
       color-scheme: dark;
-      --bg: #090d16;
-      --panel: #111827;
-      --panel-alt: #0b111e;
-      --border: #1e293b;
-      --text: #f8fafc;
-      --muted: #94a3b8;
-      --blue: #2563eb;
-      --purple: #7c3aed;
-      --emerald: #059669;
-      --amber: #f59e0b;
-      --rose: #e11d48;
+      --bg-base: #06070d;
+      --bg-card: rgba(18, 21, 36, 0.72);
+      --bg-card-hover: rgba(26, 30, 52, 0.85);
+      --bg-elevated: rgba(12, 15, 28, 0.9);
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-glow: rgba(139, 92, 246, 0.45);
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --accent-violet: #8b5cf6;
+      --accent-indigo: #6366f1;
+      --accent-fuchsia: #ec4899;
+      --accent-cyan: #06b6d4;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --grad-primary: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
+      --grad-video: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%);
+      --grad-audio: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
+      --grad-emerald: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      --shadow-card: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
     }
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg-base);
+      color: var(--text-primary);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       min-height: 100vh;
-      line-height: 1.5;
+      line-height: 1.6;
+      overflow-x: hidden;
+      position: relative;
     }
+
+    h1, h2, h3, h4, .brand-title {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      letter-spacing: -0.02em;
+    }
+
+    /* Animated Ambient Background Orbs */
+    .ambient-bg {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      overflow: hidden;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at 15% 15%, rgba(99, 102, 241, 0.16), transparent 40%),
+        radial-gradient(circle at 85% 20%, rgba(236, 72, 153, 0.14), transparent 40%),
+        radial-gradient(circle at 50% 85%, rgba(6, 182, 212, 0.12), transparent 45%);
+    }
+
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(90px);
+      opacity: 0.45;
+      animation: floatOrb 18s ease-in-out infinite alternate;
+    }
+    .orb-1 { width: 420px; height: 420px; background: #6366f1; top: -120px; left: -100px; }
+    .orb-2 { width: 380px; height: 380px; background: #ec4899; top: 20%; right: -120px; animation-delay: -6s; }
+    .orb-3 { width: 340px; height: 340px; background: #06b6d4; bottom: -100px; left: 30%; animation-delay: -11s; }
+
+    @keyframes floatOrb {
+      0% { transform: translate(0, 0) scale(1); }
+      50% { transform: translate(40px, -30px) scale(1.08); }
+      100% { transform: translate(-30px, 40px) scale(0.95); }
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes pulseRing {
+      0% { transform: scale(0.85); opacity: 0.8; }
+      70% { transform: scale(1.35); opacity: 0; }
+      100% { transform: scale(1.35); opacity: 0; }
+    }
+
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+
+    /* Sticky Glass Header */
     header {
       position: sticky;
       top: 0;
-      z-index: 30;
-      background: rgba(13, 19, 34, 0.94);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--border);
-      padding: 14px 24px;
+      z-index: 40;
+      background: rgba(8, 10, 20, 0.78);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 14px 28px;
     }
-    .container { max-width: 1240px; margin: 0 auto; }
+
+    .container { max-width: 1280px; margin: 0 auto; }
+
     .header-row {
       display: flex;
       flex-wrap: wrap;
@@ -44,253 +117,509 @@
       justify-content: space-between;
       gap: 16px;
     }
-    .brand { display: flex; align-items: center; gap: 12px; }
+
+    .brand { display: flex; align-items: center; gap: 14px; }
+
     .logo {
-      width: 42px; height: 42px; border-radius: 12px;
-      background: linear-gradient(135deg, #2563eb, #6366f1);
+      width: 46px; height: 46px; border-radius: 14px;
+      background: var(--grad-primary);
       display: flex; align-items: center; justify-content: center;
-      font-weight: 800; font-size: 16px;
-      box-shadow: 0 8px 20px rgba(37, 99, 235, 0.35);
+      font-weight: 800; font-size: 18px; color: #fff;
+      box-shadow: 0 10px 25px rgba(139, 92, 246, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.35);
+      transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
+    .logo:hover { transform: rotate(-6deg) scale(1.06); }
+
     .pill {
       display: inline-flex; align-items: center; gap: 6px;
-      font-size: 11px; font-weight: 700; padding: 4px 11px;
-      border-radius: 999px; background: rgba(59, 130, 246, 0.16);
-      color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.35);
+      font-size: 11px; font-weight: 700; padding: 4px 12px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(99, 102, 241, 0.2), rgba(236, 72, 153, 0.2));
+      color: #e0e7ff;
+      border: 1px solid rgba(139, 92, 246, 0.4);
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
     }
+
     .role-badge-locked {
-      display: inline-flex; align-items: center; gap: 8px;
-      background: #0b0f1a; padding: 8px 16px; border-radius: 12px;
-      border: 1px solid #334155; font-size: 13px; font-weight: 700; color: #f8fafc;
+      display: inline-flex; align-items: center; gap: 10px;
+      background: rgba(15, 18, 32, 0.85);
+      padding: 9px 18px; border-radius: 999px;
+      border: 1px solid var(--border-subtle);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+      font-size: 13px; font-weight: 600; color: #f8fafc;
     }
+
     .wallet-badge {
-      background: rgba(245, 158, 11, 0.14);
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.18), rgba(217, 119, 6, 0.08));
       border: 1px solid rgba(245, 158, 11, 0.4);
-      color: #fcd34d; padding: 7px 14px; border-radius: 10px;
-      font-size: 12px; font-weight: 700;
+      color: #fde68a; padding: 8px 16px; border-radius: 999px;
+      font-size: 13px; font-weight: 700;
+      box-shadow: 0 4px 15px rgba(245, 158, 11, 0.15);
     }
-    main { padding: 28px 24px 60px; }
-    .grid-3 { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
-    .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 20px; }
-    @media (max-width: 900px) { .grid-3 { grid-template-columns: 1fr; } }
+
+    main { padding: 34px 28px 80px; }
+
+    .grid-3 { display: grid; grid-template-columns: 1.85fr 1fr; gap: 24px; }
+    .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 24px; }
+    @media (max-width: 960px) {
+      .grid-3, .grid-2 { grid-template-columns: 1fr; }
+      header, main { padding-left: 16px; padding-right: 16px; }
+    }
+
+    /* Glassmorphic Cards */
     .card {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 22px;
+      background: var(--bg-card);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid var(--border-subtle);
+      border-radius: 24px;
+      padding: 28px;
+      box-shadow: var(--shadow-card);
+      transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.28s ease, box-shadow 0.28s ease;
+      animation: fadeUp 0.5s ease backwards;
     }
+    .card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(139, 92, 246, 0.35);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), 0 0 30px rgba(139, 92, 246, 0.12);
+    }
+
     .hero-card {
-      background: radial-gradient(circle at top left, rgba(37,99,235,0.28), rgba(17,24,39,0.95) 65%);
-      border: 1px solid rgba(59, 130, 246, 0.35);
+      position: relative;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 85% 20%, rgba(236, 72, 153, 0.24), transparent 45%),
+        radial-gradient(circle at 10% 80%, rgba(99, 102, 241, 0.28), transparent 50%),
+        rgba(18, 21, 38, 0.85);
+      border: 1px solid rgba(139, 92, 246, 0.4);
     }
-    h2 { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
-    h3 { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
-    p.sub { font-size: 13px; color: var(--muted); }
-    .btn-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+
+    /* Animated Radar Visual inside Hero */
+    .radar-wrap {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: rgba(16, 185, 129, 0.14);
+      color: #6ee7b7;
+      border: 1px solid rgba(16, 185, 129, 0.35);
+    }
+    .pulse-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #10b981;
+      position: relative;
+    }
+    .pulse-dot::after {
+      content: '';
+      position: absolute;
+      inset: -4px;
+      border-radius: 50%;
+      border: 2px solid #10b981;
+      animation: pulseRing 1.8s infinite;
+    }
+
+    h2 { font-size: 24px; font-weight: 800; margin-bottom: 8px; line-height: 1.3; }
+    h3 { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+    p.sub { font-size: 14px; color: var(--text-secondary); }
+
+    /* Modern Animated Buttons */
+    .btn-row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 22px; }
     .btn {
-      border: none; border-radius: 12px; padding: 11px 18px;
-      font-size: 13px; font-weight: 700; cursor: pointer;
-      color: #fff; display: inline-flex; align-items: center; gap: 8px;
-      transition: transform 0.1s, opacity 0.15s;
+      border: none;
+      border-radius: 14px;
+      padding: 13px 22px;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 13.5px;
+      font-weight: 700;
+      cursor: pointer;
+      color: #fff;
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      transition: all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative;
+      overflow: hidden;
     }
-    .btn:active { transform: scale(0.98); }
-    .btn-blue { background: var(--blue); box-shadow: 0 6px 18px rgba(37,99,235,0.35); }
-    .btn-purple { background: linear-gradient(135deg, #7c3aed, #db2777); box-shadow: 0 6px 18px rgba(124,58,237,0.35); }
-    .btn-emerald { background: var(--emerald); }
-    .btn-amber { background: var(--amber); color: #090d16; }
-    .btn-dark { background: #1e293b; border: 1px solid #334155; color: #e2e8f0; }
-    .btn-rose { background: var(--rose); }
-    .section { margin-top: 28px; }
-    .celeb-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
-    .avatar {
-      width: 56px; height: 56px; border-radius: 14px;
-      background: linear-gradient(135deg, #3b82f6, #ec4899);
-      display: flex; align-items: center; justify-content: center;
-      font-weight: 800; font-size: 20px;
+    .btn:hover { transform: translateY(-2px) scale(1.01); filter: brightness(1.1); }
+    .btn:active { transform: translateY(0) scale(0.97); }
+
+    .btn-blue {
+      background: var(--grad-audio);
+      box-shadow: 0 10px 25px rgba(6, 182, 212, 0.3);
     }
-    .media-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 14px 0; }
+    .btn-purple {
+      background: var(--grad-video);
+      box-shadow: 0 10px 25px rgba(236, 72, 153, 0.35);
+    }
+    .btn-emerald {
+      background: var(--grad-emerald);
+      box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+    }
+    .btn-amber {
+      background: linear-gradient(135deg, #f59e0b, #eab308);
+      color: #090d16;
+      box-shadow: 0 8px 20px rgba(245, 158, 11, 0.3);
+    }
+    .btn-dark {
+      background: rgba(30, 41, 59, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #e2e8f0;
+    }
+    .btn-dark:hover { background: rgba(51, 65, 85, 0.9); border-color: rgba(255, 255, 255, 0.25); }
+    .btn-rose {
+      background: linear-gradient(135deg, #f43f5e, #e11d48);
+      box-shadow: 0 8px 20px rgba(244, 63, 94, 0.3);
+    }
+
+    .section { margin-top: 38px; }
+    .section-head {
+      display: flex; flex-wrap: wrap; align-items: flex-end;
+      justify-content: space-between; gap: 16px; margin-bottom: 20px;
+    }
+
+    /* Celebrity Profile & Media Cards */
+    .celeb-header { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 14px; }
+    .avatar-img {
+      width: 64px; height: 64px; border-radius: 18px;
+      object-fit: cover;
+      border: 2px solid rgba(139, 92, 246, 0.6);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+    }
+    .verified-tick {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 18px; height: 18px; border-radius: 50%;
+      background: #3b82f6; color: #fff; font-size: 10px; margin-left: 4px;
+    }
+    .media-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 18px 0; }
     .media-item {
-      background: var(--panel-alt); border: 1px solid var(--border);
-      border-radius: 12px; padding: 12px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      overflow: hidden;
+      transition: transform 0.25s ease;
     }
+    .media-item:hover { transform: scale(1.02); border-color: rgba(255,255,255,0.2); }
+    .media-thumb {
+      height: 135px; width: 100%; object-fit: cover;
+      display: block;
+    }
+    .media-body { padding: 12px 14px; }
+
     .badge-online {
-      display: inline-block; font-size: 11px; font-weight: 700;
-      padding: 2px 9px; border-radius: 99px;
-      background: rgba(16, 185, 129, 0.18); color: #6ee7b7;
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 11px; font-weight: 700;
+      padding: 3px 10px; border-radius: 99px;
+      background: rgba(16, 185, 129, 0.16); color: #6ee7b7;
+      border: 1px solid rgba(16, 185, 129, 0.3);
     }
+
     .input, select {
-      width: 100%; padding: 10px 12px; border-radius: 10px;
-      background: var(--panel-alt); border: 1px solid #334155;
-      color: #fff; font-size: 13px; margin-top: 4px; margin-bottom: 12px;
+      width: 100%; padding: 13px 16px; border-radius: 14px;
+      background: rgba(10, 13, 24, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #fff; font-size: 14px; margin-top: 6px; margin-bottom: 14px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      outline: none;
     }
-    table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px; }
-    th, td { text-align: left; padding: 12px 10px; border-bottom: 1px solid var(--border); }
-    th { color: var(--muted); font-weight: 600; }
+    .input:focus, select:focus {
+      border-color: var(--accent-violet);
+      box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+    }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 13.5px; }
+    th, td { text-align: left; padding: 14px 12px; border-bottom: 1px solid var(--border-subtle); }
+    th { color: var(--text-secondary); font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em; }
+
+    /* Toast Notification */
     .toast {
-      position: fixed; bottom: 24px; right: 24px; z-index: 100;
-      background: #2563eb; color: #fff; padding: 12px 18px;
-      border-radius: 12px; font-size: 13px; font-weight: 600;
-      box-shadow: 0 12px 30px rgba(0,0,0,0.5); display: none;
+      position: fixed; bottom: 28px; right: 28px; z-index: 100;
+      background: linear-gradient(135deg, rgba(30, 27, 75, 0.95), rgba(15, 23, 42, 0.95));
+      backdrop-filter: blur(16px);
+      color: #fff; padding: 14px 22px;
+      border-radius: 16px; font-size: 13.5px; font-weight: 600;
+      border: 1px solid rgba(139, 92, 246, 0.5);
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.65);
+      display: none;
+      animation: fadeUp 0.25s ease;
     }
+
+    /* Call Modal */
     dialog {
-      margin: auto; width: 92%; max-width: 540px;
-      background: var(--panel); color: var(--text);
-      border: 1px solid #334155; border-radius: 24px; padding: 24px;
-      box-shadow: 0 25px 60px rgba(0,0,0,0.75);
+      margin: auto; width: 92%; max-width: 560px;
+      background: rgba(15, 18, 34, 0.95);
+      backdrop-filter: blur(24px);
+      color: var(--text-primary);
+      border: 1px solid rgba(139, 92, 246, 0.4);
+      border-radius: 28px; padding: 28px;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.85);
     }
-    dialog::backdrop { background: rgba(9, 13, 22, 0.82); backdrop-filter: blur(6px); }
+    dialog::backdrop { background: rgba(5, 7, 15, 0.82); backdrop-filter: blur(10px); }
+
     .video-stage {
-      position: relative; height: 270px; background: #050811;
-      border: 1px solid var(--border); border-radius: 16px;
+      position: relative; height: 300px;
+      background: radial-gradient(circle at center, #1e1b4b 0%, #090d16 100%);
+      border: 1px solid var(--border-subtle); border-radius: 20px;
       overflow: hidden; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; margin: 16px 0;
+      align-items: center; justify-content: center; margin: 18px 0;
+    }
+    .call-wave-avatar {
+      width: 84px; height: 84px; border-radius: 50%;
+      background: var(--grad-primary);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 36px; margin: 0 auto 14px;
+      position: relative;
+      box-shadow: 0 0 35px rgba(139, 92, 246, 0.5);
+    }
+    .call-wave-avatar::after {
+      content: ''; position: absolute; inset: -10px;
+      border-radius: 50%; border: 2px solid rgba(139, 92, 246, 0.5);
+      animation: pulseRing 2s infinite;
     }
     #localVideo {
-      position: absolute; bottom: 12px; right: 12px;
-      width: 130px; height: 92px; border-radius: 10px;
-      background: #1e293b; border: 2px solid #3b82f6; object-fit: cover;
+      position: absolute; bottom: 14px; right: 14px;
+      width: 136px; height: 96px; border-radius: 14px;
+      background: #0f172a; border: 2px solid #8b5cf6; object-fit: cover;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.6);
     }
     #remoteVideo {
       position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
     }
+
+    /* Modern Split-Layout Login Experience */
     .login-screen {
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 20px;
-      background: radial-gradient(circle at top, rgba(37, 99, 235, 0.25), #090d16 65%);
+      padding: 24px;
     }
-    .login-card {
+    .login-shell {
       width: 100%;
-      max-width: 480px;
-      background: var(--panel);
-      border: 1px solid #334155;
-      border-radius: 24px;
-      padding: 30px;
-      box-shadow: 0 25px 60px rgba(0,0,0,0.65);
+      max-width: 1020px;
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      background: rgba(14, 17, 30, 0.82);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 32px;
+      overflow: hidden;
+      box-shadow: 0 30px 90px rgba(0, 0, 0, 0.75);
+      animation: fadeUp 0.6s cubic-bezier(0.22, 1, 0.36, 1);
     }
+    @media (max-width: 860px) { .login-shell { grid-template-columns: 1fr; } }
+
+    .login-showcase {
+      padding: 44px;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(139, 92, 246, 0.32), transparent 55%),
+        radial-gradient(circle at 80% 85%, rgba(236, 72, 153, 0.25), transparent 55%),
+        linear-gradient(160deg, rgba(17, 24, 39, 0.9), rgba(9, 13, 22, 0.95));
+      border-right: 1px solid var(--border-subtle);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .feature-chips {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 28px;
+    }
+    .f-chip {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 14px;
+      font-size: 12.5px;
+    }
+    .f-chip strong { display: block; color: #fff; font-size: 13.5px; margin-bottom: 3px; }
+
+    .login-card { padding: 42px; }
+
     .cred-list {
-      background: var(--panel-alt);
-      border: 1px solid var(--border);
-      border-radius: 14px;
+      background: rgba(8, 11, 20, 0.75);
+      border: 1px solid var(--border-subtle);
+      border-radius: 18px;
       padding: 12px;
-      margin-bottom: 18px;
-      font-size: 12px;
+      margin-bottom: 20px;
+      font-size: 12.5px;
     }
     .cred-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 6px 8px;
-      border-radius: 8px;
+      padding: 8px 12px;
+      border-radius: 10px;
       cursor: pointer;
-      transition: background 0.15s;
+      transition: all 0.18s ease;
     }
-    .cred-row:hover { background: rgba(59, 130, 246, 0.15); }
+    .cred-row:hover {
+      background: rgba(139, 92, 246, 0.18);
+      transform: translateX(4px);
+    }
+
     .hidden { display: none !important; }
   </style>
 </head>
 <body>
+  <!-- Animated Ambient Background -->
+  <div class="ambient-bg">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
 
   <!-- ==================== LOGIN SCREEN (VISIBLE IMMEDIATELY BY DEFAULT) ==================== -->
   <div id="otpLoginScreen" class="login-screen">
-    <div class="login-card">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
-        <div class="logo">FC</div>
+    <div class="login-shell">
+      <!-- Left Showcase Panel -->
+      <div class="login-showcase">
         <div>
-          <h2 style="margin:0;font-size:21px;">Friends Connect</h2>
-          <p class="sub">Role-Isolated Mobile Number + OTP Login</p>
+          <div class="brand" style="margin-bottom:28px;">
+            <div class="logo">FC</div>
+            <div>
+              <span class="pill">Next-Gen Social Ecosystem</span>
+              <h1 style="font-size:24px;margin-top:4px;">Friends Connect</h1>
+            </div>
+          </div>
+
+          <h2 style="font-size:30px;line-height:1.22;margin-bottom:14px;">
+            Live Audio & Video Calls, Verified Celebrities & Nearby Events.
+          </h2>
+          <p class="sub" style="font-size:14.5px;">
+            Experience instant 1-tap random friend matchmaking, 1:1 celebrity video calls, and location-based concert ticketing in one secure platform.
+          </p>
+
+          <div class="feature-chips">
+            <div class="f-chip">
+              <strong>🎙️📹 Random Match</strong>
+              1:1 Live WebRTC Audio & Video Calls with online peers
+            </div>
+            <div class="f-chip">
+              <strong>⭐ Celebrity Connect</strong>
+              Per-minute VIP Audio & Video calls + exclusive media feed
+            </div>
+            <div class="f-chip">
+              <strong>📍 Geo-Events</strong>
+              Discover nearby concerts & book instant QR passes
+            </div>
+            <div class="f-chip">
+              <strong>🎧 24/7 Support</strong>
+              Dedicated Audio-Only Support & Live Chat desk
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:32px;font-size:12px;color:var(--text-muted);">
+          🔒 End-to-End Encrypted WebRTC • Role-Isolated Cookie Sessions • Web + Android + iOS
         </div>
       </div>
 
-      <div class="cred-list">
-        <div style="color:#93c5fd;font-weight:700;margin-bottom:6px;">
-          🔑 Click any Demo Mobile Number below to auto-fill (OTP: <code>123456</code>):
+      <!-- Right OTP Login Form -->
+      <div class="login-card">
+        <h2 style="font-size:22px;margin-bottom:4px;">Sign In to Your Account</h2>
+        <p class="sub" style="margin-bottom:18px;">Select a demo account below or enter your mobile number & OTP</p>
+
+        <div class="cred-list">
+          <div style="color:#c4b5fd;font-weight:700;margin-bottom:8px;padding:0 6px;font-size:11.5px;text-transform:uppercase;letter-spacing:0.05em;">
+            ⚡ Tap any role to auto-fill (OTP: 123456)
+          </div>
+          <div class="cred-row" onclick="fillDemoPhone('+919876543210')">
+            <span>👤 <strong>Normal User</strong> (Arjun Nair)</span>
+            <code style="color:#6ee7b7;font-weight:700;">+919876543210</code>
+          </div>
+          <div class="cred-row" onclick="fillDemoPhone('+919999900001')">
+            <span>⭐ <strong>Celebrity</strong> (Dulquer Sithara)</span>
+            <code style="color:#fcd34d;font-weight:700;">+919999900001</code>
+          </div>
+          <div class="cred-row" onclick="fillDemoPhone('+919888800001')">
+            <span>🏢 <strong>Organization</strong> (Kochi Live Arena)</span>
+            <code style="color:#93c5fd;font-weight:700;">+919888800001</code>
+          </div>
+          <div class="cred-row" onclick="fillDemoPhone('+919777700001')">
+            <span>🎧 <strong>Customer Care</strong> (Rahul Support)</span>
+            <code style="color:#c4b5fd;font-weight:700;">+919777700001</code>
+          </div>
+          <div class="cred-row" onclick="fillDemoPhone('+919000000001')">
+            <span>🛡️ <strong>Super Admin</strong> (Platform Control)</span>
+            <code style="color:#fda4af;font-weight:700;">+919000000001</code>
+          </div>
         </div>
-        <div class="cred-row" onclick="fillDemoPhone('+919876543210')">
-          <span>👤 <strong>Normal User</strong> (Arjun Nair)</span>
-          <code style="color:#6ee7b7;">+919876543210</code>
-        </div>
-        <div class="cred-row" onclick="fillDemoPhone('+919999900001')">
-          <span>⭐ <strong>Celebrity</strong> (Dulquer Sithara)</span>
-          <code style="color:#fcd34d;">+919999900001</code>
-        </div>
-        <div class="cred-row" onclick="fillDemoPhone('+919888800001')">
-          <span>🏢 <strong>Organization</strong> (Kochi Live Events)</span>
-          <code style="color:#93c5fd;">+919888800001</code>
-        </div>
-        <div class="cred-row" onclick="fillDemoPhone('+919777700001')">
-          <span>🎧 <strong>Customer Care</strong> (Rahul Support)</span>
-          <code style="color:#c4b5fd;">+919777700001</code>
-        </div>
-        <div class="cred-row" onclick="fillDemoPhone('+919000000001')">
-          <span>🛡️ <strong>Super Admin</strong> (Platform Admin)</span>
-          <code style="color:#fda4af;">+919000000001</code>
-        </div>
+
+        <label style="font-size:12px;font-weight:600;color:var(--text-secondary);">Mobile Number</label>
+        <input id="loginPhoneInput" class="input" type="tel" value="+919876543210" placeholder="Enter mobile number..." />
+
+        <label style="font-size:12px;font-weight:600;color:var(--text-secondary);">6-Digit OTP / Passcode</label>
+        <input id="loginOtpInput" class="input" type="password" value="123456" style="letter-spacing:6px;font-weight:800;font-size:16px;color:#6ee7b7;" />
+
+        <button class="btn btn-purple" style="width:100%;justify-content:center;padding:15px;font-size:15px;margin-top:6px;" onclick="completeOtpLogin()">
+          ✨ Verify OTP & Continue
+        </button>
       </div>
-
-      <label style="font-size:12px;color:var(--muted);">Mobile Number (Determines your Account & Role)</label>
-      <input id="loginPhoneInput" class="input" type="tel" value="+919876543210" placeholder="Enter mobile number..." />
-
-      <label style="font-size:12px;color:var(--muted);">6-Digit OTP / Dummy Password</label>
-      <input id="loginOtpInput" class="input" type="password" value="123456" style="letter-spacing:4px;font-weight:800;font-size:15px;color:#6ee7b7;" />
-
-      <button class="btn btn-blue" style="width:100%;justify-content:center;padding:13px;font-size:14px;margin-top:4px;" onclick="completeOtpLogin()">
-        🔓 Sign In with OTP
-      </button>
     </div>
   </div>
 
-  <!-- ==================== AUTHENTICATED WORKSPACE (STRICTLY LOCKED TO LOGGED-IN USER ROLE) ==================== -->
+  <!-- ==================== AUTHENTICATED WORKSPACE ==================== -->
   <div id="mainAppContainer" class="hidden">
     <header>
       <div class="container header-row">
         <div class="brand">
           <div class="logo">FC</div>
           <div>
-            <div style="display:flex;align-items:center;gap:8px;">
-              <strong style="font-size:17px;">Friends Connect</strong>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <strong class="brand-title" style="font-size:19px;">Friends Connect</strong>
               <span class="pill" id="activeRolePill">NORMAL USER</span>
             </div>
-            <div style="font-size:12px;color:var(--muted);" id="activeUserSubtitle">
+            <div style="font-size:12px;color:var(--text-secondary);" id="activeUserSubtitle">
               Logged in as Arjun Nair
             </div>
           </div>
         </div>
 
-        <!-- Locked Session Badge (No Role Switching Allowed Without Sign Out) -->
         <div class="role-badge-locked">
-          🔒 Session Active: <span id="lockedUserName" style="color:#60a5fa;">Arjun Nair</span>
-          <span style="color:var(--muted);font-weight:400;">|</span>
+          <span class="pulse-dot"></span>
+          <span id="lockedUserName" style="color:#e0e7ff;">Arjun Nair</span>
+          <span style="color:var(--text-muted);">•</span>
           <span id="lockedUserPhone" style="font-family:monospace;font-size:12px;color:#6ee7b7;">+919876543210</span>
         </div>
 
-        <div style="display:flex;align-items:center;gap:10px;">
+        <div style="display:flex;align-items:center;gap:12px;">
           <div class="wallet-badge" id="headerWalletBadge">🪙 <span id="coinBalanceText">650</span> Coins</div>
-          <button class="btn btn-rose" style="padding:8px 14px;font-size:12px;" onclick="signOutSession()">
-            🚪 Sign Out
+          <button class="btn btn-rose" style="padding:9px 16px;font-size:12.5px;" onclick="signOutSession()">
+            Sign Out
           </button>
         </div>
       </div>
     </header>
 
     <main class="container">
-      <!-- ==================== 1. NORMAL USER VIEW (ONLY VISIBLE TO NORMAL USERS) ==================== -->
+      <!-- ==================== 1. NORMAL USER VIEW ==================== -->
       <div id="role-NORMAL" class="role-view hidden">
         <div class="grid-3">
           <div class="card hero-card">
-            <span class="badge-online">● 1,420 Friends Online Now</span>
-            <h2 style="margin-top:10px;">1-Tap Random Friend Matchmaking (Audio & Video Call)</h2>
-            <p class="sub">
-              Connect immediately with another online friend using real-time <strong>WebRTC Audio Call</strong> or <strong>WebRTC Video Call</strong>. Your phone number stays 100% private.
+            <div class="radar-wrap">
+              <span class="pulse-dot"></span>
+              1,420 Online Friends Ready to Talk
+            </div>
+            <h2 style="margin-top:14px;font-size:28px;">
+              Instant Random Friend Matchmaking — Audio & Video
+            </h2>
+            <p class="sub" style="max-width:620px;font-size:14.5px;">
+              Tap below to enter the live matchmaking queue and connect with an online friend via encrypted <strong>WebRTC Audio Call</strong> or <strong>HD Video Call</strong>.
             </p>
             <div class="btn-row">
               <button class="btn btn-blue" onclick="startWebRtcCall('RANDOM_AUDIO', 'Meera Krishnan (Matched Friend)', 0)">
-                🎙️ Start Random Audio Call
+                🎙️ Random Audio Call
               </button>
               <button class="btn btn-purple" onclick="startWebRtcCall('RANDOM_VIDEO', 'Meera Krishnan (Matched Friend)', 0)">
-                📹 Start Random Video Call
+                📹 Random Video Call
               </button>
               <button class="btn btn-dark" onclick="startWebRtcCall('SUPPORT_AUDIO', 'Rahul — Customer Care Support', 0)">
                 🎧 Customer Care (Audio-Only)
@@ -299,95 +628,124 @@
           </div>
 
           <div class="card">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-              <h3>Premium & Wallet Coins</h3>
-              <span class="pill">VIP ACTIVE</span>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+              <h3>VIP Wallet & Coins</h3>
+              <span class="pill">PREMIUM</span>
             </div>
-            <p class="sub">Recharge coins to call Verified Celebrities via Audio or Video Call.</p>
-            <div style="background:var(--panel-alt);padding:12px;border-radius:12px;margin:14px 0;display:flex;justify-content:space-between;align-items:center;border:1px solid var(--border);">
-              <span style="font-size:12px;color:var(--muted);">Available Balance</span>
-              <strong style="color:#fcd34d;font-size:18px;">🪙 <span id="coinBalanceCard">650</span> Coins</strong>
+            <p class="sub">Top up coins for per-minute Audio & Video calls with Verified Celebrities.</p>
+            <div style="background:var(--bg-elevated);padding:16px;border-radius:16px;margin:16px 0;display:flex;justify-content:space-between;align-items:center;border:1px solid var(--border-subtle);">
+              <span style="font-size:12.5px;color:var(--text-secondary);">Wallet Balance</span>
+              <strong style="color:#fde68a;font-size:22px;">🪙 <span id="coinBalanceCard">650</span></strong>
             </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-              <button class="btn btn-amber" onclick="rechargeCoins(300)">+300 Coins (₹149)</button>
-              <button class="btn btn-dark" onclick="rechargeCoins(1000)">+1000 Coins (₹399)</button>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+              <button class="btn btn-amber" style="justify-content:center;" onclick="rechargeCoins(300)">+300 Coins (₹149)</button>
+              <button class="btn btn-dark" style="justify-content:center;" onclick="rechargeCoins(1000)">+1000 Coins (₹399)</button>
             </div>
           </div>
         </div>
 
         <!-- Celebrities Section -->
         <div class="section">
-          <h2>Verified Celebrities — Photos, Videos & Direct WebRTC Calling</h2>
-          <p class="sub" style="margin-bottom:14px;">Connect with your favorite stars via Per-Minute Audio Call or Video Call</p>
+          <div class="section-head">
+            <div>
+              <h2>Verified Celebrities — Exclusive Feed & Live Calls</h2>
+              <p class="sub">Watch latest photos & videos and connect 1:1 via Audio or Video Call</p>
+            </div>
+          </div>
+
           <div class="grid-2">
             <div class="card">
               <div class="celeb-header">
-                <div style="display:flex;align-items:center;gap:12px;">
-                  <div class="avatar">DS</div>
+                <div style="display:flex;align-items:center;gap:14px;">
+                  <img class="avatar-img" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300" alt="Dulquer Sithara" />
                   <div>
-                    <h3>Dulquer Sithara <span style="color:#60a5fa;">✔</span></h3>
-                    <p class="sub">Cinema & Pan-Indian Actor • <span class="badge-online">ONLINE</span></p>
+                    <h3 style="display:flex;align-items:center;">
+                      Dulquer Sithara <span class="verified-tick">✔</span>
+                    </h3>
+                    <p class="sub" style="font-size:12.5px;">Cinema & Pan-Indian Actor • 128.4K Followers</p>
+                    <span class="badge-online" style="margin-top:6px;">● ONLINE NOW</span>
                   </div>
                 </div>
-                <div style="text-align:right;font-size:12px;color:#fcd34d;font-weight:700;">
-                  🎙️ 60c/m<br/>📹 150c/m
+                <div style="text-align:right;font-size:12px;color:#fde68a;font-weight:700;background:rgba(245,158,11,0.12);padding:8px 12px;border-radius:12px;border:1px solid rgba(245,158,11,0.3);">
+                  🎙️ 60 Coins/m<br/>📹 150 Coins/m
                 </div>
               </div>
-              <p class="sub">Available for live fan interactions! Check out my latest photo & video updates below.</p>
+
+              <p class="sub">Connecting directly with fans every evening! Check out my latest behind-the-scenes updates.</p>
+
               <div class="media-grid" id="celebMediaGrid">
                 <div class="media-item">
-                  <span class="pill">📷 PHOTO</span>
-                  <p style="font-size:12px;margin-top:8px;">Evening shoot wrap at Fort Kochi waterfront!</p>
-                  <small style="color:var(--muted);">❤️ 4,320 likes</small>
+                  <img class="media-thumb" src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600" alt="Shoot wrap" />
+                  <div class="media-body">
+                    <span class="pill" style="font-size:9px;padding:2px 8px;">📷 PHOTO</span>
+                    <p style="font-size:12.5px;margin-top:6px;font-weight:500;">Evening shoot wrap at Fort Kochi waterfront!</p>
+                    <small style="color:var(--text-secondary);">❤️ 4,320</small>
+                  </div>
                 </div>
                 <div class="media-item">
-                  <span class="pill">▶ VIDEO</span>
-                  <p style="font-size:12px;margin-top:8px;">Exclusive teaser before tonight's fan Video Calls!</p>
-                  <small style="color:var(--muted);">❤️ 8,910 likes</small>
+                  <img class="media-thumb" src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=600" alt="Teaser video" />
+                  <div class="media-body">
+                    <span class="pill" style="font-size:9px;padding:2px 8px;">▶ VIDEO</span>
+                    <p style="font-size:12.5px;margin-top:6px;font-weight:500;">Exclusive teaser before tonight's fan Video Calls!</p>
+                    <small style="color:var(--text-secondary);">❤️ 8,910</small>
+                  </div>
                 </div>
               </div>
+
               <div class="btn-row">
                 <button class="btn btn-blue" style="flex:1;justify-content:center;" onclick="startWebRtcCall('CELEB_AUDIO', 'Dulquer Sithara ✔', 60)">
-                  🎙️ Audio Call (60 Coins/m)
+                  🎙️ Audio Call (60c/m)
                 </button>
                 <button class="btn btn-purple" style="flex:1;justify-content:center;" onclick="startWebRtcCall('CELEB_VIDEO', 'Dulquer Sithara ✔', 150)">
-                  📹 Video Call (150 Coins/m)
+                  📹 Video Call (150c/m)
                 </button>
               </div>
             </div>
 
             <div class="card">
               <div class="celeb-header">
-                <div style="display:flex;align-items:center;gap:12px;">
-                  <div class="avatar" style="background:linear-gradient(135deg,#ec4899,#f59e0b);">AM</div>
+                <div style="display:flex;align-items:center;gap:14px;">
+                  <img class="avatar-img" src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=300" alt="Ananya Menon" />
                   <div>
-                    <h3>Ananya Menon <span style="color:#60a5fa;">✔</span></h3>
-                    <p class="sub">Playback Singer & Indie Artist • <span class="badge-online">ONLINE</span></p>
+                    <h3 style="display:flex;align-items:center;">
+                      Ananya Menon <span class="verified-tick">✔</span>
+                    </h3>
+                    <p class="sub" style="font-size:12.5px;">Playback Singer & Indie Pop • 84.5K Followers</p>
+                    <span class="badge-online" style="margin-top:6px;">● ONLINE NOW</span>
                   </div>
                 </div>
-                <div style="text-align:right;font-size:12px;color:#fcd34d;font-weight:700;">
-                  🎙️ 40c/m<br/>📹 100c/m
+                <div style="text-align:right;font-size:12px;color:#fde68a;font-weight:700;background:rgba(245,158,11,0.12);padding:8px 12px;border-radius:12px;border:1px solid rgba(245,158,11,0.3);">
+                  🎙️ 40 Coins/m<br/>📹 100 Coins/m
                 </div>
               </div>
-              <p class="sub">Live acoustic requests & fan chats! Connect with me via Audio or Video Call.</p>
+
+              <p class="sub">Live acoustic song requests & fan chats! Available for both Audio and Video calls.</p>
+
               <div class="media-grid">
                 <div class="media-item">
-                  <span class="pill">📷 PHOTO</span>
-                  <p style="font-size:12px;margin-top:8px;">Studio acoustic session in Trivandrum!</p>
-                  <small style="color:var(--muted);">❤️ 2,150 likes</small>
+                  <img class="media-thumb" src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600" alt="Studio session" />
+                  <div class="media-body">
+                    <span class="pill" style="font-size:9px;padding:2px 8px;">📷 PHOTO</span>
+                    <p style="font-size:12.5px;margin-top:6px;font-weight:500;">Acoustic studio session in Trivandrum!</p>
+                    <small style="color:var(--text-secondary);">❤️ 2,150</small>
+                  </div>
                 </div>
                 <div class="media-item">
-                  <span class="pill">▶ VIDEO</span>
-                  <p style="font-size:12px;margin-top:8px;">Unplugged rehearsal clip for fans!</p>
-                  <small style="color:var(--muted);">❤️ 5,410 likes</small>
+                  <img class="media-thumb" src="https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=600" alt="Live concert" />
+                  <div class="media-body">
+                    <span class="pill" style="font-size:9px;padding:2px 8px;">▶ VIDEO</span>
+                    <p style="font-size:12.5px;margin-top:6px;font-weight:500;">Unplugged jam session for fans!</p>
+                    <small style="color:var(--text-secondary);">❤️ 5,410</small>
+                  </div>
                 </div>
               </div>
+
               <div class="btn-row">
                 <button class="btn btn-blue" style="flex:1;justify-content:center;" onclick="startWebRtcCall('CELEB_AUDIO', 'Ananya Menon ✔', 40)">
-                  🎙️ Audio Call (40 Coins/m)
+                  🎙️ Audio Call (40c/m)
                 </button>
                 <button class="btn btn-purple" style="flex:1;justify-content:center;" onclick="startWebRtcCall('CELEB_VIDEO', 'Ananya Menon ✔', 100)">
-                  📹 Video Call (100 Coins/m)
+                  📹 Video Call (100c/m)
                 </button>
               </div>
             </div>
@@ -396,12 +754,12 @@
 
         <!-- Location-Based Events Section -->
         <div class="section">
-          <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px;">
+          <div class="section-head">
             <div>
               <h2>Location-Based Events Near You</h2>
-              <p class="sub">Automatically filtered based on your GPS location & city radius</p>
+              <p class="sub">Sorted automatically by GPS distance from your location</p>
             </div>
-            <div style="display:flex;gap:8px;">
+            <div style="display:flex;flex-wrap:wrap;gap:8px;">
               <button class="btn btn-dark" onclick="filterEvents('ALL')">📍 All Nearby</button>
               <button class="btn btn-dark" onclick="filterEvents('Kochi')">📍 Kochi (4.2 km)</button>
               <button class="btn btn-dark" onclick="filterEvents('Kozhikode')">📍 Kozhikode (42 km)</button>
@@ -410,16 +768,16 @@
 
           <div class="grid-2" id="eventsListContainer">
             <div class="card event-card" data-city="Kochi">
-              <div style="display:flex;justify-content:space-between;font-size:12px;color:#60a5fa;font-weight:700;margin-bottom:6px;">
+              <div style="display:flex;justify-content:space-between;font-size:12px;color:#38bdf8;font-weight:700;margin-bottom:8px;">
                 <span>🏢 Kochi Live Arena Events</span>
                 <span>📍 4.2 km away • Kochi</span>
               </div>
               <h3>Kochi Sunset Music & Indie Fest 2026</h3>
-              <p class="sub" style="margin:6px 0 12px;">Live open-air concert at Bolgatty Palace Grounds featuring top bands & fan meetups.</p>
-              <div style="display:flex;justify-content:space-between;align-items:center;background:var(--panel-alt);padding:12px;border-radius:12px;border:1px solid var(--border);">
+              <p class="sub" style="margin:6px 0 16px;">Open-air concert at Bolgatty Palace Grounds featuring top bands, food stalls & fan meetups.</p>
+              <div style="display:flex;justify-content:space-between;align-items:center;background:var(--bg-elevated);padding:14px 16px;border-radius:16px;border:1px solid var(--border-subtle);">
                 <div>
-                  <strong style="font-size:13px;">VIP Fan Pit & General Access</strong>
-                  <div style="font-size:12px;color:var(--muted);">₹499 • 188 seats remaining</div>
+                  <strong style="font-size:14px;">VIP Fan Pit & General Access</strong>
+                  <div style="font-size:12px;color:var(--text-secondary);">₹499 • 188 seats remaining</div>
                 </div>
                 <button class="btn btn-emerald" onclick="bookTicket('Kochi Sunset Music & Indie Fest 2026', 499)">
                   🎟️ Book Ticket (₹499)
@@ -428,16 +786,16 @@
             </div>
 
             <div class="card event-card" data-city="Kozhikode">
-              <div style="display:flex;justify-content:space-between;font-size:12px;color:#60a5fa;font-weight:700;margin-bottom:6px;">
+              <div style="display:flex;justify-content:space-between;font-size:12px;color:#38bdf8;font-weight:700;margin-bottom:8px;">
                 <span>🏢 Malabar Creators Hub</span>
                 <span>📍 42.8 km away • Kozhikode</span>
               </div>
               <h3>Malabar Creators & Tech Conclave</h3>
-              <p class="sub" style="margin:6px 0 12px;">Meet digital creators, filmmakers, and music artists at Calicut Trade Centre.</p>
-              <div style="display:flex;justify-content:space-between;align-items:center;background:var(--panel-alt);padding:12px;border-radius:12px;border:1px solid var(--border);">
+              <p class="sub" style="margin:6px 0 16px;">Meet digital creators, filmmakers, and music artists at Calicut Trade Centre.</p>
+              <div style="display:flex;justify-content:space-between;align-items:center;background:var(--bg-elevated);padding:14px 16px;border-radius:16px;border:1px solid var(--border-subtle);">
                 <div>
-                  <strong style="font-size:13px;">Standard Entry Pass</strong>
-                  <div style="font-size:12px;color:var(--muted);">₹299 • 160 seats remaining</div>
+                  <strong style="font-size:14px;">Standard Entry Pass</strong>
+                  <div style="font-size:12px;color:var(--text-secondary);">₹299 • 160 seats remaining</div>
                 </div>
                 <button class="btn btn-emerald" onclick="bookTicket('Malabar Creators & Tech Conclave', 299)">
                   🎟️ Book Ticket (₹299)
@@ -446,30 +804,30 @@
             </div>
           </div>
 
-          <div class="card" style="margin-top:16px;">
+          <div class="card" style="margin-top:20px;">
             <h3>🎟️ My Booked Event QR Passes</h3>
-            <div id="bookedTicketsList" style="display:flex;flex-wrap:wrap;gap:12px;margin-top:10px;">
-              <div style="background:var(--panel-alt);border:1px solid rgba(16,185,129,0.4);padding:10px 14px;border-radius:12px;font-size:12px;">
-                <strong>Kochi Sunset Music & Indie Fest 2026</strong> • Paid ₹499 • <code style="color:#6ee7b7;">QR: FC-QR-98A7F2C1</code>
+            <div id="bookedTicketsList" style="display:flex;flex-wrap:wrap;gap:12px;margin-top:12px;">
+              <div style="background:var(--bg-elevated);border:1px solid rgba(16,185,129,0.4);padding:12px 16px;border-radius:14px;font-size:12.5px;">
+                <strong>Kochi Sunset Music & Indie Fest 2026</strong> • Paid ₹499 • <code style="color:#6ee7b7;font-weight:700;">QR: FC-QR-98A7F2C1</code>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- ==================== 2. CELEBRITY ACCOUNT VIEW (ONLY VISIBLE TO CELEBRITY) ==================== -->
+      <!-- ==================== 2. CELEBRITY ACCOUNT VIEW ==================== -->
       <div id="role-CELEBRITY" class="role-view hidden">
         <div class="grid-3">
           <div class="card">
             <h3>Celebrity Studio — Dulquer Sithara ✔</h3>
-            <p class="sub">Manage your Audio & Video Call per-minute coin rates and availability.</p>
-            <div style="background:var(--panel-alt);padding:14px;border-radius:12px;margin:14px 0;border:1px solid var(--border);">
-              <div style="font-size:12px;color:var(--muted);">Total Celebrity Call Earnings</div>
-              <div style="font-size:22px;font-weight:800;color:#6ee7b7;">🪙 14,500 Earned Coins</div>
+            <p class="sub">Configure your per-minute Audio & Video call coin rates and live status.</p>
+            <div style="background:var(--bg-elevated);padding:16px;border-radius:16px;margin:16px 0;border:1px solid var(--border-subtle);">
+              <div style="font-size:12px;color:var(--text-secondary);">Total Celebrity Call Earnings</div>
+              <div style="font-size:24px;font-weight:800;color:#6ee7b7;">🪙 14,500 Earned Coins</div>
             </div>
-            <label style="font-size:12px;color:var(--muted);">🎙️ Audio Call Rate (Coins / min)</label>
+            <label style="font-size:12px;color:var(--text-secondary);">🎙️ Audio Call Rate (Coins / min)</label>
             <input class="input" type="number" value="60" />
-            <label style="font-size:12px;color:var(--muted);">📹 Video Call Rate (Coins / min)</label>
+            <label style="font-size:12px;color:var(--text-secondary);">📹 Video Call Rate (Coins / min)</label>
             <input class="input" type="number" value="150" />
             <button class="btn btn-dark" style="width:100%;justify-content:center;" onclick="startWebRtcCall('SUPPORT_AUDIO', 'VIP Customer Care Support Desk', 0)">
               🎧 Call VIP Customer Care (Audio-Only)
@@ -478,64 +836,64 @@
 
           <div class="card">
             <h3>Upload Exclusive Photos & Videos to Fan Feed</h3>
-            <p class="sub" style="margin-bottom:12px;">Posts appear immediately on Normal Users' Celebrity Feeds.</p>
-            <label style="font-size:12px;color:var(--muted);">Media Type</label>
+            <p class="sub" style="margin-bottom:14px;">Your uploads appear immediately on Normal Users' Celebrity Feeds.</p>
+            <label style="font-size:12px;color:var(--text-secondary);">Media Type</label>
             <select id="celebMediaType">
               <option value="PHOTO">📷 Photo Post</option>
               <option value="VIDEO">▶ Short Video</option>
             </select>
-            <label style="font-size:12px;color:var(--muted);">Caption</label>
+            <label style="font-size:12px;color:var(--text-secondary);">Caption</label>
             <input id="celebMediaCaption" class="input" placeholder="Share an update with your fans..." />
-            <button class="btn btn-blue" onclick="publishCelebMedia()">Publish to Fan Feed</button>
+            <button class="btn btn-purple" onclick="publishCelebMedia()">Publish to Fan Feed</button>
           </div>
         </div>
       </div>
 
-      <!-- ==================== 3. ORGANIZATION VIEW (ONLY VISIBLE TO ORGANIZATION) ==================== -->
+      <!-- ==================== 3. ORGANIZATION VIEW ==================== -->
       <div id="role-ORG" class="role-view hidden">
         <div class="grid-2">
           <div class="card">
             <h2>Organization — Publish Location-Based Event</h2>
-            <p class="sub" style="margin-bottom:14px;">List events with city & GPS coordinates so nearby users can book tickets.</p>
-            <label style="font-size:12px;color:var(--muted);">Event Title</label>
+            <p class="sub" style="margin-bottom:16px;">Events are indexed with GPS coordinates so nearby users can discover and book tickets.</p>
+            <label style="font-size:12px;color:var(--text-secondary);">Event Title</label>
             <input id="orgEventTitle" class="input" placeholder="e.g., Trivandrum New Year Gala 2026" />
-            <label style="font-size:12px;color:var(--muted);">City</label>
+            <label style="font-size:12px;color:var(--text-secondary);">City</label>
             <select id="orgEventCity">
               <option value="Kochi">Kochi</option>
               <option value="Kozhikode">Kozhikode</option>
               <option value="Trivandrum">Trivandrum</option>
             </select>
-            <label style="font-size:12px;color:var(--muted);">Ticket Price (₹)</label>
+            <label style="font-size:12px;color:var(--text-secondary);">Ticket Price (₹)</label>
             <input id="orgEventPrice" class="input" type="number" value="499" />
-            <button class="btn btn-blue" onclick="publishOrgEvent()">Publish Event & Open Ticket Booking</button>
+            <button class="btn btn-blue" onclick="publishOrgEvent()">Publish Event & Open Ticket Sales</button>
           </div>
 
           <div class="card">
-            <h2>Live Ticket Sales & QR Verification</h2>
+            <h2>Live Ticket Sales & QR Scanner</h2>
             <p class="sub">Kochi Sunset Music & Indie Fest: <strong>386 / 600 tickets sold</strong></p>
-            <p class="sub" style="margin-top:8px;">Malabar Creators & Tech Conclave: <strong>169 / 350 tickets sold</strong></p>
+            <p class="sub" style="margin-top:10px;">Malabar Creators & Tech Conclave: <strong>169 / 350 tickets sold</strong></p>
           </div>
         </div>
       </div>
 
-      <!-- ==================== 4. CUSTOMER CARE SUPPORT VIEW (ONLY VISIBLE TO SUPPORT) ==================== -->
+      <!-- ==================== 4. CUSTOMER CARE SUPPORT VIEW ==================== -->
       <div id="role-SUPPORT" class="role-view hidden">
         <div class="grid-3">
           <div class="card">
             <span class="pill">Strict Audio-Only + Live Chat Policy</span>
-            <h2 style="margin-top:10px;">Customer Care Support Queue</h2>
-            <p class="sub" style="margin-bottom:14px;">
+            <h2 style="margin-top:12px;">Customer Care Support Queue</h2>
+            <p class="sub" style="margin-bottom:16px;">
               Assist Normal Users and Celebrities via Live Chat or Audio-Only WebRTC Calls. Video is strictly disabled on support channels.
             </p>
-            <div style="background:var(--panel-alt);padding:14px;border-radius:12px;border:1px solid rgba(245,158,11,0.4);margin-bottom:10px;">
-              <strong style="color:#fcd34d;font-size:12px;">★ VIP CELEBRITY — Dulquer Sithara</strong>
+            <div style="background:var(--bg-elevated);padding:16px;border-radius:16px;border:1px solid rgba(245,158,11,0.4);margin-bottom:12px;">
+              <strong style="color:#fde68a;font-size:12.5px;">★ VIP CELEBRITY — Dulquer Sithara</strong>
               <p class="sub" style="margin:6px 0;">October earnings payout verification</p>
               <button class="btn btn-blue" style="width:100%;justify-content:center;" onclick="startWebRtcCall('SUPPORT_AUDIO', 'Dulquer Sithara (Celebrity Support)', 0)">
                 🎙️ Start Audio-Only Support Call
               </button>
             </div>
-            <div style="background:var(--panel-alt);padding:14px;border-radius:12px;border:1px solid var(--border);">
-              <strong style="font-size:12px;">NORMAL USER — Arjun Nair</strong>
+            <div style="background:var(--bg-elevated);padding:16px;border-radius:16px;border:1px solid var(--border-subtle);">
+              <strong style="font-size:12.5px;">NORMAL USER — Arjun Nair</strong>
               <p class="sub" style="margin:6px 0;">Event QR pass query</p>
               <button class="btn btn-dark" style="width:100%;justify-content:center;" onclick="startWebRtcCall('SUPPORT_AUDIO', 'Arjun Nair (User Support)', 0)">
                 🎙️ Start Audio-Only Support Call
@@ -545,19 +903,19 @@
 
           <div class="card">
             <h3>Omnichannel Customer Care Live Chat</h3>
-            <div id="supportChatBox" style="background:var(--panel-alt);height:220px;overflow-y:auto;padding:12px;border-radius:12px;margin:12px 0;border:1px solid var(--border);font-size:13px;">
-              <div style="margin-bottom:10px;"><strong style="color:#60a5fa;">Dulquer Sithara (Celebrity):</strong> Hi Support, can we verify my October coin withdrawal?</div>
+            <div id="supportChatBox" style="background:var(--bg-elevated);height:230px;overflow-y:auto;padding:14px;border-radius:16px;margin:14px 0;border:1px solid var(--border-subtle);font-size:13.5px;">
+              <div style="margin-bottom:10px;"><strong style="color:#38bdf8;">Dulquer Sithara (Celebrity):</strong> Hi Support, can we verify my October coin withdrawal?</div>
               <div style="margin-bottom:10px;"><strong style="color:#6ee7b7;">Rahul (Support Desk):</strong> Sure! Your payout is approved. We can also hop on an Audio Support Call anytime.</div>
             </div>
-            <div style="display:flex;gap:8px;">
+            <div style="display:flex;gap:10px;">
               <input id="supportChatInput" class="input" style="margin:0;" placeholder="Reply to User or Celebrity..." />
-              <button class="btn btn-blue" onclick="sendSupportChat()">Send</button>
+              <button class="btn btn-purple" onclick="sendSupportChat()">Send</button>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- ==================== 5. SUPER ADMIN VIEW (ONLY VISIBLE TO SUPER ADMIN) ==================== -->
+      <!-- ==================== 5. SUPER ADMIN VIEW ==================== -->
       <div id="role-SUPER_ADMIN" class="role-view hidden">
         <div class="card">
           <h2>Super Admin — Platform Control, Blocks & Granular Call Restrictions</h2>
@@ -578,13 +936,13 @@
             </thead>
             <tbody>
               <tr>
-                <td><strong>Arjun Nair</strong><br/><small style="color:var(--muted);">+919876543210</small></td>
+                <td><strong>Arjun Nair</strong><br/><small style="color:var(--text-secondary);">+919876543210</small></td>
                 <td>NORMAL</td>
                 <td><span id="userStatusBadge" class="badge-online">ACTIVE</span></td>
                 <td><input type="checkbox" id="permRandomAudio" checked onchange="saveModerationState('Updated Random Audio permission')" /></td>
                 <td><input type="checkbox" id="permRandomVideo" checked onchange="saveModerationState('Updated Random Video permission')" /></td>
                 <td><input type="checkbox" id="permCelebCall" checked onchange="saveModerationState('Updated Celebrity Call permission')" /></td>
-                <td><button class="btn btn-rose" style="padding:6px 12px;font-size:12px;" onclick="toggleBlockUser()">Block / Unblock</button></td>
+                <td><button class="btn btn-rose" style="padding:8px 14px;font-size:12px;" onclick="toggleBlockUser()">Block / Unblock</button></td>
               </tr>
             </tbody>
           </table>
@@ -597,20 +955,20 @@
   <dialog id="webrtcCallDialog">
     <div style="display:flex;justify-content:space-between;align-items:center;">
       <span class="badge-online" id="callDialogBadge">● LIVE WEBRTC CALL</span>
-      <span id="callTimerText" style="font-family:monospace;font-weight:700;">00:00</span>
+      <span id="callTimerText" style="font-family:monospace;font-size:15px;font-weight:700;">00:00</span>
     </div>
 
     <div class="video-stage">
       <video id="remoteVideo" autoplay playsinline class="hidden"></video>
       <div id="audioAvatarStage" style="text-align:center;z-index:2;">
-        <div style="font-size:42px;margin-bottom:8px;">🎙️</div>
-        <h3 id="callPeerTitle">Peer Name</h3>
+        <div class="call-wave-avatar">🎙️</div>
+        <h3 id="callPeerTitle" style="font-size:20px;">Peer Name</h3>
         <p class="sub" id="callSubText">WebRTC Opus Audio Stream Active</p>
       </div>
       <video id="localVideo" autoplay muted playsinline class="hidden"></video>
     </div>
 
-    <div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;">
+    <div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;">
       <button class="btn btn-dark" id="muteBtn" onclick="toggleWebRtcMute()">🎙️ Mute Mic</button>
       <button class="btn btn-dark" id="camBtn" onclick="toggleWebRtcCamera()">📷 Toggle Camera</button>
       <button class="btn btn-rose" onclick="endWebRtcCall()">End Call</button>
@@ -620,7 +978,6 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    // Account Directory Mapped Strictly by Mobile Number
     const ACCOUNT_DIRECTORY = {
       '+919876543210': { role: 'NORMAL', name: 'Arjun Nair', roleLabel: 'NORMAL USER', showWallet: true },
       '+919999900001': { role: 'CELEBRITY', name: 'Dulquer Sithara ✔', roleLabel: 'VERIFIED CELEBRITY', showWallet: false },
@@ -644,7 +1001,6 @@
     let videoPermitted = false;
     let currentSession = null;
 
-    // Cookie & Storage Helpers
     function setSessionCookieAndStorage(sessionObj) {
       const encoded = encodeURIComponent(JSON.stringify(sessionObj));
       const expires = new Date(Date.now() + 7 * 86400 * 1000).toUTCString();
@@ -655,14 +1011,12 @@
     }
 
     function getActiveSession() {
-      // 1. Check Cookie first
       const match = document.cookie.split('; ').find(row => row.startsWith(SESSION_COOKIE_KEY + '='));
       if (match) {
         try {
           return JSON.parse(decodeURIComponent(match.split('=')[1]));
         } catch (e) {}
       }
-      // 2. Fallback to localStorage
       try {
         const raw = localStorage.getItem(SESSION_STORAGE_KEY);
         if (raw) return JSON.parse(raw);
@@ -680,6 +1034,7 @@
     function fillDemoPhone(phone) {
       document.getElementById('loginPhoneInput').value = phone;
       document.getElementById('loginOtpInput').value = '123456';
+      showToast('Selected ' + phone + ' — Click Verify OTP & Continue');
     }
 
     function completeOtpLogin() {
@@ -707,7 +1062,6 @@
       };
 
       setSessionCookieAndStorage(sessionObj);
-      // Push history guard so pressing Back button never logs out or returns to login screen
       history.pushState({ authenticated: true }, '', window.location.pathname);
       renderAuthenticatedSession(sessionObj);
       showToast('Signed in as ' + sessionObj.name + ' (' + sessionObj.roleLabel + ')');
@@ -715,19 +1069,15 @@
 
     function renderAuthenticatedSession(session) {
       currentSession = session;
-
-      // Hide Login Screen, Show Authenticated App
       document.getElementById('otpLoginScreen').classList.add('hidden');
       document.getElementById('mainAppContainer').classList.remove('hidden');
 
-      // Update Header Info
       document.getElementById('activeRolePill').textContent = session.roleLabel;
       document.getElementById('activeUserSubtitle').textContent = 'Strict Role-Isolated Session • ' + session.name;
       document.getElementById('lockedUserName').textContent = session.name;
       document.getElementById('lockedUserPhone').textContent = session.phone;
       document.getElementById('headerWalletBadge').style.display = session.showWallet ? 'block' : 'none';
 
-      // Strictly hide ALL other role workspaces and ONLY show the logged-in user's role view
       document.querySelectorAll('.role-view').forEach(el => el.classList.add('hidden'));
       const targetView = document.getElementById('role-' + session.role);
       if (targetView) {
@@ -743,20 +1093,18 @@
       clearSessionCookieAndStorage();
       document.getElementById('mainAppContainer').classList.add('hidden');
       document.getElementById('otpLoginScreen').classList.remove('hidden');
-      showToast('Signed out successfully. Session cookie cleared.');
+      showToast('Signed out successfully.');
     }
 
-    // Prevent Browser Back Button from logging out an active session
     window.addEventListener('popstate', function () {
       const existing = getActiveSession();
       if (existing) {
         history.pushState({ authenticated: true }, '', window.location.pathname);
         renderAuthenticatedSession(existing);
-        showToast('Session is still active. Click "Sign Out" button to switch accounts.');
+        showToast('Session is locked. Click "Sign Out" to switch accounts.');
       }
     });
 
-    // Restore Session Automatically on Page Load / Refresh
     window.addEventListener('DOMContentLoaded', function () {
       loadModerationState();
       const existing = getActiveSession();
@@ -844,7 +1192,6 @@
         document.getElementById('coinBalanceCard').textContent = coins;
       }
 
-      // Strict Policy: Video is NEVER allowed on SUPPORT_AUDIO (Customer Care)
       videoPermitted = (callType === 'RANDOM_VIDEO' || callType === 'CELEB_VIDEO') && callType !== 'SUPPORT_AUDIO';
       videoEnabled = videoPermitted;
       audioMuted = false;
@@ -862,7 +1209,6 @@
       const dialog = document.getElementById('webrtcCallDialog');
       dialog.showModal();
 
-      // Start Real Browser WebRTC (RTCPeerConnection + getUserMedia)
       try {
         peerConnection = new RTCPeerConnection({
           iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
@@ -940,8 +1286,8 @@
     function bookTicket(title, price) {
       const qr = 'FC-QR-' + Math.random().toString(36).substring(2, 10).toUpperCase();
       const div = document.createElement('div');
-      div.style = 'background:var(--panel-alt);border:1px solid rgba(16,185,129,0.4);padding:10px 14px;border-radius:12px;font-size:12px;';
-      div.innerHTML = '<strong>' + title + '</strong> • Paid ₹' + price + ' • <code style="color:#6ee7b7;">QR: ' + qr + '</code>';
+      div.style = 'background:var(--bg-elevated);border:1px solid rgba(16,185,129,0.4);padding:12px 16px;border-radius:14px;font-size:12.5px;';
+      div.innerHTML = '<strong>' + title + '</strong> • Paid ₹' + price + ' • <code style="color:#6ee7b7;font-weight:700;">QR: ' + qr + '</code>';
       document.getElementById('bookedTicketsList').prepend(div);
       showToast('Booked ticket for ' + title + '! QR Pass generated.');
     }
@@ -952,7 +1298,7 @@
       if (!caption) return showToast('Please enter a caption');
       const div = document.createElement('div');
       div.className = 'media-item';
-      div.innerHTML = '<span class="pill">' + (type === 'VIDEO' ? '▶ VIDEO' : '📷 PHOTO') + '</span><p style="font-size:12px;margin-top:8px;">' + caption + '</p><small style="color:var(--muted);">❤️ Just now</small>';
+      div.innerHTML = '<div class="media-body"><span class="pill" style="font-size:9px;padding:2px 8px;">' + (type === 'VIDEO' ? '▶ VIDEO' : '📷 PHOTO') + '</span><p style="font-size:12.5px;margin-top:6px;font-weight:500;">' + caption + '</p><small style="color:var(--text-secondary);">❤️ Just now</small></div>';
       document.getElementById('celebMediaGrid').prepend(div);
       document.getElementById('celebMediaCaption').value = '';
       showToast('Published to Celebrity Fan Feed!');
@@ -967,7 +1313,7 @@
       div.className = 'card event-card';
       div.setAttribute('data-city', city);
       const safeTitle = title.replace(/'/g, '');
-      div.innerHTML = `<div style="display:flex;justify-content:space-between;font-size:12px;color:#60a5fa;font-weight:700;margin-bottom:6px;"><span>🏢 Verified Org</span><span>📍 ${city}</span></div><h3>${safeTitle}</h3><p class="sub" style="margin:6px 0 12px;">Newly published organization event.</p><div style="display:flex;justify-content:space-between;align-items:center;background:var(--panel-alt);padding:12px;border-radius:12px;border:1px solid var(--border);"><div><strong style="font-size:13px;">Standard Entry Pass</strong><div style="font-size:12px;color:var(--muted);">₹${price} • 250 seats left</div></div><button class="btn btn-emerald" onclick="bookTicket('${safeTitle}', ${price})">🎟️ Book Ticket (₹${price})</button></div>`;
+      div.innerHTML = `<div style="display:flex;justify-content:space-between;font-size:12px;color:#38bdf8;font-weight:700;margin-bottom:8px;"><span>🏢 Verified Org</span><span>📍 ${city}</span></div><h3>${safeTitle}</h3><p class="sub" style="margin:6px 0 16px;">Newly published organization event.</p><div style="display:flex;justify-content:space-between;align-items:center;background:var(--bg-elevated);padding:14px 16px;border-radius:16px;border:1px solid var(--border-subtle);"><div><strong style="font-size:14px;">Standard Entry Pass</strong><div style="font-size:12px;color:var(--text-secondary);">₹${price} • 250 seats left</div></div><button class="btn btn-emerald" onclick="bookTicket('${safeTitle}', ${price})">🎟️ Book Ticket (₹${price})</button></div>`;
       document.getElementById('eventsListContainer').prepend(div);
       document.getElementById('orgEventTitle').value = '';
       showToast('Published Event: ' + title);
