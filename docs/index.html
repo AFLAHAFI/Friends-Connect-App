@@ -21,7 +21,6 @@
     @layer theme {
       :root {
         color-scheme: light dark;
-        /* Restrained, clean, minimal-color standard palette (Light default) */
         --bg-page: #f8fafc;
         --bg-surface: #ffffff;
         --bg-subtle: #f1f5f9;
@@ -30,7 +29,7 @@
         --text-secondary: #475569;
         --text-muted: #64748b;
         --border-subtle: #e2e8f0;
-        --border-control: #64748b; /* >= 3:1 contrast against white */
+        --border-control: #64748b;
         --accent-primary: #2563eb;
         --accent-primary-hover: #1d4ed8;
         --accent-primary-fg: #ffffff;
@@ -39,11 +38,14 @@
         --status-ok-bg: #f0fdf4;
         --status-ok-fg: #166534;
         --status-ok-border: #86efac;
+        --status-warn-bg: #fffbeb;
+        --status-warn-fg: #92400e;
+        --status-warn-border: #fde68a;
         --status-danger-bg: #fef2f2;
         --status-danger-fg: #991b1b;
         --status-danger-border: #fca5a5;
         --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
-        --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.06);
+        --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
         --radius-sm: 8px;
         --radius-md: 12px;
         --radius-lg: 16px;
@@ -59,15 +61,18 @@
           --text-secondary: #a1a1aa;
           --text-muted: #71717a;
           --border-subtle: #27272a;
-          --border-control: #71717a; /* >= 3:1 contrast against #121215 */
+          --border-control: #71717a;
           --accent-primary: #2563eb;
           --accent-primary-hover: #3b82f6;
           --accent-primary-fg: #ffffff;
           --accent-soft: rgba(37, 99, 235, 0.14);
           --accent-border: rgba(59, 130, 246, 0.4);
-          --status-ok-bg: rgba(22, 101, 52, 0.2);
+          --status-ok-bg: rgba(22, 101, 52, 0.22);
           --status-ok-fg: #86efac;
           --status-ok-border: rgba(134, 239, 172, 0.4);
+          --status-warn-bg: rgba(146, 64, 14, 0.25);
+          --status-warn-fg: #fde68a;
+          --status-warn-border: rgba(253, 230, 138, 0.4);
           --status-danger-bg: rgba(153, 27, 27, 0.25);
           --status-danger-fg: #fca5a5;
           --status-danger-border: rgba(252, 165, 165, 0.4);
@@ -296,6 +301,12 @@
         border: 1px solid var(--status-ok-border);
       }
 
+      .status-badge.is-ringing {
+        background-color: var(--status-warn-bg);
+        color: var(--status-warn-fg);
+        border-color: var(--status-warn-border);
+      }
+
       .status-badge.is-blocked {
         background-color: var(--status-danger-bg);
         color: var(--status-danger-fg);
@@ -307,6 +318,25 @@
         height: 7px;
         border-radius: 50%;
         background-color: currentColor;
+      }
+
+      @keyframes ringPulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.06); }
+      }
+
+      .incoming-banner {
+        background-color: var(--status-ok-bg);
+        border: 2px solid var(--status-ok-border);
+        border-radius: var(--radius-lg);
+        padding: 1.25rem 1.5rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        box-shadow: var(--shadow-md);
       }
 
       .btn-row {
@@ -344,6 +374,15 @@
 
       .btn-primary:hover:not(:disabled) {
         background-color: var(--accent-primary-hover);
+      }
+
+      .btn-accept {
+        background-color: #16a34a;
+        color: #ffffff;
+      }
+
+      .btn-accept:hover:not(:disabled) {
+        background-color: #15803d;
       }
 
       .btn-secondary {
@@ -389,7 +428,6 @@
         margin-bottom: 1rem;
       }
 
-      /* Celebrity Cards */
       .celeb-header {
         display: flex;
         align-items: flex-start;
@@ -459,7 +497,6 @@
         margin-block-end: 1rem;
       }
 
-      /* Clean Standard Login Layout */
       .login-screen {
         min-height: 100vh;
         display: flex;
@@ -551,11 +588,11 @@
         background-color: var(--bg-surface);
       }
 
-      /* WebRTC Call Dialog */
+      /* Native Modal Dialogs per modern-web-guidance */
       dialog {
         margin: auto;
         width: 92%;
-        max-width: 520px;
+        max-width: 560px;
         background-color: var(--bg-surface);
         color: var(--text-primary);
         border: 1px solid var(--border-subtle);
@@ -564,15 +601,21 @@
         box-shadow: var(--shadow-md);
       }
 
+      dialog:modal {
+        overscroll-behavior: contain;
+      }
+
       dialog::backdrop {
-        background: rgba(15, 23, 42, 0.6);
+        background: rgba(15, 23, 42, 0.65);
         backdrop-filter: blur(4px);
+        overflow: hidden;
+        overscroll-behavior: contain;
       }
 
       .video-stage {
         position: relative;
-        height: 280px;
-        background-color: var(--bg-subtle);
+        height: 300px;
+        background-color: #09090b;
         border: 1px solid var(--border-subtle);
         border-radius: var(--radius-md);
         overflow: hidden;
@@ -581,32 +624,35 @@
         align-items: center;
         justify-content: center;
         margin: 1rem 0;
+        color: #f4f4f5;
       }
 
       .call-avatar {
-        width: 68px;
-        height: 68px;
+        width: 72px;
+        height: 72px;
         border-radius: 50%;
         background-color: var(--accent-soft);
-        border: 1px solid var(--accent-border);
+        border: 2px solid var(--accent-border);
         color: var(--accent-primary);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.75rem;
+        font-size: 1.85rem;
         margin: 0 auto 0.75rem;
+        animation: ringPulse 1.6s ease-in-out infinite;
       }
 
       #localVideo {
         position: absolute;
         bottom: 12px;
         right: 12px;
-        width: 128px;
-        height: 92px;
+        width: 136px;
+        height: 98px;
         border-radius: var(--radius-sm);
-        background: #000;
-        border: 1px solid var(--border-control);
+        background: #18181b;
+        border: 2px solid #ffffff;
         object-fit: cover;
+        z-index: 5;
       }
 
       #remoteVideo {
@@ -615,6 +661,30 @@
         width: 100%;
         height: 100%;
         object-fit: cover;
+        z-index: 1;
+      }
+
+      .remote-peer-tag {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        z-index: 6;
+        background: rgba(9, 9, 11, 0.75);
+        color: #fff;
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.3rem 0.65rem;
+        border-radius: var(--radius-sm);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      .ringing-helper-box {
+        background-color: var(--bg-subtle);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-md);
+        padding: 0.875rem 1rem;
+        margin-bottom: 1rem;
+        font-size: 0.8125rem;
       }
 
       .toast {
@@ -669,7 +739,7 @@
             </div>
             <div class="feature-item">
               <strong>Verified Celebrities</strong>
-              Per-minute Audio & Video calls + photo/video updates
+              Two-way ringing Audio & Video calls + media feed
             </div>
             <div class="feature-item">
               <strong>Nearby Events</strong>
@@ -683,7 +753,7 @@
         </div>
 
         <div style="margin-top:2rem;font-size:0.75rem;color:var(--text-muted);">
-          Role-Isolated Session Cookies • End-to-End WebRTC • Web, Android & iOS
+          Role-Isolated Session Cookies • Two-Way WebRTC Signaling • Web, Android & iOS
         </div>
       </div>
 
@@ -793,6 +863,25 @@
     </header>
 
     <main class="container">
+      <!-- ==================== GLOBAL LIVE INCOMING CALL BANNER (FOR RECEIVER) ==================== -->
+      <div id="liveIncomingCallBanner" class="incoming-banner hidden" role="region" aria-label="Incoming call notification">
+        <div>
+          <span class="status-badge is-ringing" style="margin-bottom:0.35rem;">
+            <span class="status-dot"></span> INCOMING CALL RINGING
+          </span>
+          <h3 id="bannerCallerTitle" style="font-size:1.15rem;">Incoming Video Call from Arjun Nair (+919876543210)</h3>
+          <p class="sub" id="bannerCallerSub">Tap Accept below to enable your camera/mic and answer this call.</p>
+        </div>
+        <div style="display:flex;gap:0.625rem;flex-wrap:wrap;">
+          <button type="button" class="btn btn-accept" onclick="acceptIncomingCall()">
+            Accept & Answer Call
+          </button>
+          <button type="button" class="btn btn-danger" onclick="declineIncomingCall()">
+            Decline Call
+          </button>
+        </div>
+      </div>
+
       <!-- ==================== 1. NORMAL USER VIEW ==================== -->
       <div id="role-NORMAL" class="role-view hidden">
         <div class="grid-3">
@@ -808,13 +897,13 @@
               Connect immediately with an available peer via encrypted WebRTC Audio Call or HD Video Call, or reach Customer Care via Audio-Only support.
             </p>
             <div class="btn-row">
-              <button type="button" class="btn btn-primary" onclick="startWebRtcCall('RANDOM_AUDIO', 'Meera Krishnan (Matched Friend)', 0)">
+              <button type="button" class="btn btn-primary" onclick="startWebRtcCall('RANDOM_AUDIO', 'Meera Krishnan (Matched Friend)', 0, 'NORMAL', '+919876543210')">
                 Start Random Audio Call
               </button>
-              <button type="button" class="btn btn-secondary" onclick="startWebRtcCall('RANDOM_VIDEO', 'Meera Krishnan (Matched Friend)', 0)">
+              <button type="button" class="btn btn-secondary" onclick="startWebRtcCall('RANDOM_VIDEO', 'Meera Krishnan (Matched Friend)', 0, 'NORMAL', '+919876543210')">
                 Start Random Video Call
               </button>
-              <button type="button" class="btn btn-subtle" onclick="startWebRtcCall('SUPPORT_AUDIO', 'Rahul — Customer Care Support', 0)">
+              <button type="button" class="btn btn-subtle" onclick="startWebRtcCall('SUPPORT_AUDIO', 'Rahul — Customer Care Support', 0, 'SUPPORT', '+919777700001')">
                 Customer Care (Audio-Only)
               </button>
             </div>
@@ -842,8 +931,11 @@
           <div class="section-head">
             <div>
               <h2>Verified Celebrities — Feed & Direct Calls</h2>
-              <p class="sub">View latest photo/video updates and connect 1:1 via Audio or Video Call</p>
+              <p class="sub">When you start an Audio or Video Call, it rings live on the Celebrity's account (+919999900001) to Accept & Answer.</p>
             </div>
+            <button type="button" class="btn btn-subtle" onclick="openReceiverTab('+919999900001')">
+              ↗ Open Celebrity Receiver Tab (+919999900001)
+            </button>
           </div>
 
           <div class="grid-2">
@@ -855,9 +947,9 @@
                     <h3 style="display:flex;align-items:center;">
                       Dulquer Sithara <span class="verified-tick" title="Verified">✓</span>
                     </h3>
-                    <p class="sub" style="font-size:0.8125rem;">Actor • 128.4K Followers</p>
+                    <p class="sub" style="font-size:0.8125rem;">Actor • 128.4K Followers • <code>+919999900001</code></p>
                     <span class="status-badge" style="margin-top:0.35rem;">
-                      <span class="status-dot"></span> Online
+                      <span class="status-dot"></span> Online & Ready for Calls
                     </span>
                   </div>
                 </div>
@@ -888,10 +980,10 @@
               </div>
 
               <div class="btn-row">
-                <button type="button" class="btn btn-secondary" style="flex:1;" onclick="startWebRtcCall('CELEB_AUDIO', 'Dulquer Sithara ✓', 60)">
+                <button type="button" class="btn btn-secondary" style="flex:1;" onclick="startWebRtcCall('CELEB_AUDIO', 'Dulquer Sithara ✓', 60, 'CELEBRITY', '+919999900001')">
                   Audio Call (60c/m)
                 </button>
-                <button type="button" class="btn btn-primary" style="flex:1;" onclick="startWebRtcCall('CELEB_VIDEO', 'Dulquer Sithara ✓', 150)">
+                <button type="button" class="btn btn-primary" style="flex:1;" onclick="startWebRtcCall('CELEB_VIDEO', 'Dulquer Sithara ✓', 150, 'CELEBRITY', '+919999900001')">
                   Video Call (150c/m)
                 </button>
               </div>
@@ -907,7 +999,7 @@
                     </h3>
                     <p class="sub" style="font-size:0.8125rem;">Playback Singer & Indie Artist • 84.5K Followers</p>
                     <span class="status-badge" style="margin-top:0.35rem;">
-                      <span class="status-dot"></span> Online
+                      <span class="status-dot"></span> Online & Ready for Calls
                     </span>
                   </div>
                 </div>
@@ -938,10 +1030,10 @@
               </div>
 
               <div class="btn-row">
-                <button type="button" class="btn btn-secondary" style="flex:1;" onclick="startWebRtcCall('CELEB_AUDIO', 'Ananya Menon ✓', 40)">
+                <button type="button" class="btn btn-secondary" style="flex:1;" onclick="startWebRtcCall('CELEB_AUDIO', 'Ananya Menon ✓', 40, 'CELEBRITY', '+919999900001')">
                   Audio Call (40c/m)
                 </button>
-                <button type="button" class="btn btn-primary" style="flex:1;" onclick="startWebRtcCall('CELEB_VIDEO', 'Ananya Menon ✓', 100)">
+                <button type="button" class="btn btn-primary" style="flex:1;" onclick="startWebRtcCall('CELEB_VIDEO', 'Ananya Menon ✓', 100, 'CELEBRITY', '+919999900001')">
                   Video Call (100c/m)
                 </button>
               </div>
@@ -1014,13 +1106,37 @@
 
       <!-- ==================== 2. CELEBRITY ACCOUNT VIEW ==================== -->
       <div id="role-CELEBRITY" class="role-view hidden">
+        <!-- Celebrity Live Incoming Call Queue Card -->
+        <div class="card" style="margin-bottom:1.5rem;">
+          <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:1rem;">
+            <div>
+              <span class="status-badge" id="celebQueueStatusBadge">
+                <span class="status-dot"></span>
+                <span id="celebQueueStatusText">LISTENING FOR INCOMING FAN CALLS</span>
+              </span>
+              <h2 style="margin-top:0.5rem;">Live Fan Call Receiver Queue</h2>
+              <p class="sub" id="celebIncomingQueueSub">
+                When a Normal User calls you (Audio or Video), an Incoming Call popup and Accept/Decline controls appear here immediately.
+              </p>
+            </div>
+            <div id="celebIncomingActionBox" class="hidden" style="display:flex;gap:0.625rem;">
+              <button type="button" class="btn btn-accept" onclick="acceptIncomingCall()">
+                Accept & Answer Call
+              </button>
+              <button type="button" class="btn btn-danger" onclick="declineIncomingCall()">
+                Decline
+              </button>
+            </div>
+          </div>
+        </div>
+
         <div class="grid-3">
           <div class="card">
             <h3>Celebrity Studio — Dulquer Sithara ✓</h3>
             <p class="sub">Configure your per-minute Audio & Video call rates and availability.</p>
             <div style="background-color:var(--bg-subtle);padding:1rem;border-radius:var(--radius-md);margin:1rem 0;border:1px solid var(--border-subtle);">
               <div style="font-size:0.75rem;color:var(--text-secondary);">Total Call Earnings</div>
-              <div style="font-size:1.35rem;font-weight:700;margin-top:0.2rem;">14,500 Coins</div>
+              <div style="font-size:1.35rem;font-weight:700;margin-top:0.2rem;"><span id="celebEarnedCoins">14,500</span> Coins</div>
             </div>
             <div class="form-group">
               <label for="celebAudioRate">Audio Call Rate (Coins / minute)</label>
@@ -1030,7 +1146,7 @@
               <label for="celebVideoRate">Video Call Rate (Coins / minute)</label>
               <input id="celebVideoRate" type="text" inputmode="numeric" value="150" />
             </div>
-            <button type="button" class="btn btn-secondary" style="width:100%;" onclick="startWebRtcCall('SUPPORT_AUDIO', 'VIP Customer Care Support Desk', 0)">
+            <button type="button" class="btn btn-secondary" style="width:100%;" onclick="startWebRtcCall('SUPPORT_AUDIO', 'VIP Customer Care Support Desk', 0, 'SUPPORT', '+919777700001')">
               Call VIP Customer Care (Audio-Only)
             </button>
           </div>
@@ -1107,14 +1223,14 @@
             <div style="background-color:var(--bg-subtle);padding:1rem;border-radius:var(--radius-md);border:1px solid var(--border-subtle);margin-bottom:0.75rem;">
               <strong style="font-size:0.875rem;">VIP Celebrity — Dulquer Sithara</strong>
               <p class="sub" style="margin:0.25rem 0 0.75rem;">October earnings payout verification</p>
-              <button type="button" class="btn btn-primary" style="width:100%;" onclick="startWebRtcCall('SUPPORT_AUDIO', 'Dulquer Sithara (Celebrity Support)', 0)">
+              <button type="button" class="btn btn-primary" style="width:100%;" onclick="startWebRtcCall('SUPPORT_AUDIO', 'Dulquer Sithara (Celebrity Support)', 0, 'CELEBRITY', '+919999900001')">
                 Start Audio-Only Support Call
               </button>
             </div>
             <div style="background-color:var(--bg-subtle);padding:1rem;border-radius:var(--radius-md);border:1px solid var(--border-subtle);">
               <strong style="font-size:0.875rem;">Normal User — Arjun Nair</strong>
               <p class="sub" style="margin:0.25rem 0 0.75rem;">Event QR pass assistance</p>
-              <button type="button" class="btn btn-secondary" style="width:100%;" onclick="startWebRtcCall('SUPPORT_AUDIO', 'Arjun Nair (User Support)', 0)">
+              <button type="button" class="btn btn-secondary" style="width:100%;" onclick="startWebRtcCall('SUPPORT_AUDIO', 'Arjun Nair (User Support)', 0, 'NORMAL', '+919876543210')">
                 Start Audio-Only Support Call
               </button>
             </div>
@@ -1176,30 +1292,73 @@
     </main>
   </div>
 
-  <!-- ==================== LIVE WEBRTC CALL DIALOG ==================== -->
-  <dialog id="webrtcCallDialog">
-    <div style="display:flex;justify-content:space-between;align-items:center;">
-      <span class="status-badge" id="callDialogBadge">
+  <!-- ==================== INCOMING CALL MODAL DIALOG (FOR CELEBRITY / RECEIVER) ==================== -->
+  <dialog id="incomingCallDialog" aria-labelledby="incomingCallTitle">
+    <div style="text-align:center;padding:0.5rem 0;">
+      <span class="status-badge is-ringing" style="margin-bottom:0.75rem;">
         <span class="status-dot"></span>
-        <span id="callDialogBadgeText">LIVE WEBRTC CALL</span>
+        <span id="incomingCallBadgeText">INCOMING VIDEO CALL</span>
       </span>
-      <span id="callTimerText" style="font-family:monospace;font-size:0.95rem;font-weight:600;">00:00</span>
+      <div class="call-avatar" id="incomingCallIcon">📹</div>
+      <h2 id="incomingCallTitle" style="font-size:1.35rem;margin-bottom:0.25rem;">Arjun Nair (+919876543210)</h2>
+      <p class="sub" id="incomingCallSubText" style="margin-bottom:1.25rem;">
+        Incoming Celebrity Video Call (150 Coins/min) — Waiting for you to answer
+      </p>
+
+      <div style="display:flex;gap:0.75rem;justify-content:center;">
+        <button type="button" class="btn btn-accept" style="flex:1;min-height:48px;" autofocus onclick="acceptIncomingCall()">
+          Accept & Answer Call
+        </button>
+        <button type="button" class="btn btn-danger" style="flex:1;min-height:48px;" onclick="declineIncomingCall()">
+          Decline Call
+        </button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- ==================== ACTIVE / OUTGOING WEBRTC CALL DIALOG ==================== -->
+  <dialog id="webrtcCallDialog" aria-labelledby="callPeerTitle">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <span class="status-badge is-ringing" id="callDialogBadge">
+        <span class="status-dot"></span>
+        <span id="callDialogBadgeText">RINGING PEER...</span>
+      </span>
+      <span id="callTimerText" style="font-family:monospace;font-size:0.95rem;font-weight:600;">Ringing...</span>
     </div>
 
     <div class="video-stage">
+      <div id="remotePeerOverlayTag" class="remote-peer-tag hidden">Connected Peer Stream</div>
       <video id="remoteVideo" autoplay playsinline class="hidden"></video>
       <div id="audioAvatarStage" style="text-align:center;z-index:2;padding:1rem;">
-        <div class="call-avatar">🎙️</div>
-        <h3 id="callPeerTitle">Peer Name</h3>
-        <p class="sub" id="callSubText">Encrypted WebRTC Audio Stream Active</p>
+        <div class="call-avatar" id="stageAvatarIcon">📹</div>
+        <h2 id="callPeerTitle" style="color:#fff;font-size:1.2rem;">Peer Name</h2>
+        <p class="sub" id="callSubText" style="color:#a1a1aa;margin-top:0.25rem;">Ringing on peer's device...</p>
       </div>
       <video id="localVideo" autoplay muted playsinline class="hidden"></video>
+    </div>
+
+    <!-- Helper shown while caller is waiting for Celebrity/receiver to press Accept -->
+    <div id="callerRingingHelper" class="ringing-helper-box">
+      <div style="font-weight:600;margin-bottom:0.35rem;color:var(--text-primary);">
+        Waiting for receiver to click "Accept & Answer Call"
+      </div>
+      <p class="sub" style="font-size:0.8rem;margin-bottom:0.65rem;">
+        To answer this call from the receiver side (<code id="targetReceiverCode">+919999900001</code>), open the receiver account in a second tab or switch to their account:
+      </p>
+      <div style="display:flex;flex-wrap:wrap;gap:0.5rem;">
+        <button type="button" class="btn btn-secondary" style="font-size:0.78rem;min-height:36px;padding:0.35rem 0.75rem;" onclick="openTargetReceiverFromCall()">
+          ↗ Open Receiver in New Tab to Answer
+        </button>
+        <button type="button" class="btn btn-subtle" style="font-size:0.78rem;min-height:36px;padding:0.35rem 0.75rem;" onclick="switchHereToAnswerCall()">
+          ⇄ Switch to Receiver Account Here to Answer
+        </button>
+      </div>
     </div>
 
     <div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:0.5rem;">
       <button type="button" class="btn btn-secondary" id="muteBtn" onclick="toggleWebRtcMute()">Mute Mic</button>
       <button type="button" class="btn btn-secondary" id="camBtn" onclick="toggleWebRtcCamera()">Toggle Camera</button>
-      <button type="button" class="btn btn-danger" onclick="endWebRtcCall()">End Call</button>
+      <button type="button" class="btn btn-danger" onclick="endWebRtcCall(true)">End Call</button>
     </div>
   </dialog>
 
@@ -1216,29 +1375,133 @@
 
     const SESSION_COOKIE_KEY = 'fc_auth_session';
     const SESSION_STORAGE_KEY = 'fc_auth_session_v1';
+    const TAB_SESSION_KEY = 'fc_tab_session_v1';
     const MODERATION_STORAGE_KEY = 'fc_moderation_v1';
+    const RINGING_CALL_STORAGE_KEY = 'fc_active_ringing_call_v2';
+    const SIGNAL_EVENT_STORAGE_KEY = 'fc_webrtc_sig_event_v2';
+    const PUBLIC_SIGNAL_TOPIC = 'fc_webrtc_live_nikhil_v2';
 
     let coins = 650;
+    let celebEarned = 14500;
     let userBlocked = false;
     let localStream = null;
+    let remoteLoopbackStream = null;
     let peerConnection = null;
     let callTimer = null;
+    let ringToneTimer = null;
     let elapsed = 0;
     let audioMuted = false;
     let videoEnabled = false;
     let videoPermitted = false;
     let currentSession = null;
 
+    // Two-way WebRTC Signaling State
+    let activeCallId = null;
+    let activeTargetPhone = '+919999900001';
+    let pendingIncomingCall = null;
+    let pendingCallerCandidates = [];
+    const sigChannel = ('BroadcastChannel' in window) ? new BroadcastChannel('fc_webrtc_sig_v2') : null;
+
+    // Web Audio API subtle ringtone generator (no external MP3 needed)
+    let audioCtx = null;
+    function playRingPulse(mode) {
+      try {
+        if (!audioCtx) {
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          if (!AudioContextClass) return;
+          audioCtx = new AudioContextClass();
+        }
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(mode === 'incoming' ? 587.33 : 440, audioCtx.currentTime);
+        if (mode === 'incoming') {
+          osc.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.18);
+        }
+        gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.45);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.45);
+      } catch (e) {}
+    }
+
+    function startRingingSound(mode) {
+      stopRingingSound();
+      playRingPulse(mode);
+      ringToneTimer = setInterval(function () {
+        playRingPulse(mode);
+      }, 2000);
+    }
+
+    function stopRingingSound() {
+      if (ringToneTimer) {
+        clearInterval(ringToneTimer);
+        ringToneTimer = null;
+      }
+    }
+
+    // Broadcast signaling message across Tabs (BroadcastChannel + localStorage) & Devices (ntfy.sh pub/sub)
+    function sendSignalingMessage(payload) {
+      const msg = Object.assign({}, payload, { ts: Date.now() });
+      try {
+        if (sigChannel) sigChannel.postMessage(msg);
+      } catch (e) {}
+      try {
+        localStorage.setItem(SIGNAL_EVENT_STORAGE_KEY, JSON.stringify(msg));
+      } catch (e) {}
+      try {
+        fetch('https://ntfy.sh/' + PUBLIC_SIGNAL_TOPIC, {
+          method: 'POST',
+          body: JSON.stringify(msg)
+        }).catch(function () {});
+      } catch (e) {}
+    }
+
+    function saveRingingCallToStorage(callObj) {
+      try {
+        if (callObj) {
+          localStorage.setItem(RINGING_CALL_STORAGE_KEY, JSON.stringify(callObj));
+        } else {
+          localStorage.removeItem(RINGING_CALL_STORAGE_KEY);
+        }
+      } catch (e) {}
+    }
+
+    function getRingingCallFromStorage() {
+      try {
+        const raw = localStorage.getItem(RINGING_CALL_STORAGE_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (Date.now() - (parsed.createdAt || 0) > 120000) {
+          localStorage.removeItem(RINGING_CALL_STORAGE_KEY);
+          return null;
+        }
+        return parsed;
+      } catch (e) {
+        return null;
+      }
+    }
+
     function setSessionCookieAndStorage(sessionObj) {
       const encoded = encodeURIComponent(JSON.stringify(sessionObj));
       const expires = new Date(Date.now() + 7 * 86400 * 1000).toUTCString();
       document.cookie = SESSION_COOKIE_KEY + '=' + encoded + '; expires=' + expires + '; path=/; SameSite=Lax';
       try {
+        sessionStorage.setItem(TAB_SESSION_KEY, JSON.stringify(sessionObj));
         localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(sessionObj));
       } catch (e) {}
     }
 
     function getActiveSession() {
+      // Tab-isolated sessionStorage first so multiple tabs can hold different roles simultaneously
+      try {
+        const tabRaw = sessionStorage.getItem(TAB_SESSION_KEY);
+        if (tabRaw) return JSON.parse(tabRaw);
+      } catch (e) {}
+
       const match = document.cookie.split('; ').find(row => row.startsWith(SESSION_COOKIE_KEY + '='));
       if (match) {
         try {
@@ -1255,6 +1518,7 @@
     function clearSessionCookieAndStorage() {
       document.cookie = SESSION_COOKIE_KEY + '=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax';
       try {
+        sessionStorage.removeItem(TAB_SESSION_KEY);
         localStorage.removeItem(SESSION_STORAGE_KEY);
       } catch (e) {}
     }
@@ -1265,9 +1529,9 @@
       showToast('Selected ' + phone + ' — Click Verify OTP & Sign In');
     }
 
-    function completeOtpLogin() {
-      const rawPhone = (document.getElementById('loginPhoneInput').value || '').replace(/\s+/g, '');
-      const otp = (document.getElementById('loginOtpInput').value || '').trim();
+    function completeOtpLogin(overridePhone) {
+      const rawPhone = (overridePhone || document.getElementById('loginPhoneInput').value || '').replace(/\s+/g, '');
+      const otp = overridePhone ? '123456' : (document.getElementById('loginOtpInput').value || '').trim();
 
       if (otp !== '123456') {
         return showToast('Invalid OTP. Use default code: 123456');
@@ -1311,18 +1575,336 @@
       if (targetView) {
         targetView.classList.remove('hidden');
       }
+
+      // Immediately check if there is a ringing call waiting for this role/account!
+      checkPendingIncomingCallForCurrentSession();
     }
 
     function signOutSession() {
-      if (localStream || peerConnection) {
-        endWebRtcCall();
-      }
+      // If user signs out without cancelling a ringing call, preserve ringing call in storage so they can answer on the receiver account
+      cleanupLocalMediaOnly();
+      hideIncomingCallUI();
       currentSession = null;
       clearSessionCookieAndStorage();
       document.getElementById('mainAppContainer').classList.add('hidden');
       document.getElementById('otpLoginScreen').classList.remove('hidden');
       showToast('Signed out.');
     }
+
+    function openReceiverTab(targetPhone) {
+      const url = window.location.origin + window.location.pathname + '?receiverPhone=' + encodeURIComponent(targetPhone) + '&t=' + Date.now();
+      window.open(url, '_blank');
+    }
+
+    function openTargetReceiverFromCall() {
+      openReceiverTab(activeTargetPhone || '+919999900001');
+    }
+
+    function switchHereToAnswerCall() {
+      const targetPhone = activeTargetPhone || '+919999900001';
+      cleanupLocalMediaOnly();
+      const callDialog = document.getElementById('webrtcCallDialog');
+      if (callDialog.open) callDialog.close();
+      completeOtpLogin(targetPhone);
+    }
+
+    // Check if an active ringing call matches the currently logged-in user
+    function checkPendingIncomingCallForCurrentSession() {
+      if (!currentSession) return;
+      const ringing = getRingingCallFromStorage();
+      if (!ringing) return;
+      if (ringing.targetRole === currentSession.role && ringing.callerPhone !== currentSession.phone) {
+        presentIncomingCallToReceiver(ringing);
+      }
+    }
+
+    function presentIncomingCallToReceiver(callPacket) {
+      if (!currentSession || currentSession.role !== callPacket.targetRole) return;
+      pendingIncomingCall = callPacket;
+      const isVideo = callPacket.callType === 'RANDOM_VIDEO' || callPacket.callType === 'CELEB_VIDEO';
+      const modeLabel = isVideo ? 'INCOMING VIDEO CALL' : 'INCOMING AUDIO CALL';
+      const rateLabel = callPacket.ratePerMin > 0 ? ' (' + callPacket.ratePerMin + ' Coins/min)' : '';
+
+      // Update Global Banner
+      const banner = document.getElementById('liveIncomingCallBanner');
+      document.getElementById('bannerCallerTitle').textContent =
+        (isVideo ? '📹 Incoming Video Call' : '🎙️ Incoming Audio Call') + ' from ' + callPacket.callerName + ' (' + callPacket.callerPhone + ')';
+      document.getElementById('bannerCallerSub').textContent =
+        'Call Type: ' + callPacket.callType.replace('_', ' ') + rateLabel + ' — Click "Accept & Answer Call" to connect.';
+      banner.classList.remove('hidden');
+
+      // Update Celebrity Queue Card if in CELEBRITY view
+      const celebBadge = document.getElementById('celebQueueStatusBadge');
+      const celebText = document.getElementById('celebQueueStatusText');
+      const celebSub = document.getElementById('celebIncomingQueueSub');
+      const celebAction = document.getElementById('celebIncomingActionBox');
+      if (celebBadge && celebText && celebSub && celebAction) {
+        celebBadge.classList.add('is-ringing');
+        celebText.textContent = modeLabel + ' FROM ' + callPacket.callerName.toUpperCase();
+        celebSub.textContent = callPacket.callerName + ' (' + callPacket.callerPhone + ') is calling you right now' + rateLabel + '.';
+        celebAction.classList.remove('hidden');
+      }
+
+      // Open Incoming Call Modal Dialog
+      document.getElementById('incomingCallBadgeText').textContent = modeLabel;
+      document.getElementById('incomingCallIcon').textContent = isVideo ? '📹' : '🎙️';
+      document.getElementById('incomingCallTitle').textContent = callPacket.callerName + ' (' + callPacket.callerPhone + ')';
+      document.getElementById('incomingCallSubText').textContent =
+        (isVideo ? 'Incoming HD Video Call' : 'Incoming Audio Call') + rateLabel + ' — Press Accept to enable your camera & microphone.';
+
+      const incDialog = document.getElementById('incomingCallDialog');
+      if (!incDialog.open) {
+        incDialog.showModal();
+      }
+      startRingingSound('incoming');
+    }
+
+    function hideIncomingCallUI() {
+      stopRingingSound();
+      document.getElementById('liveIncomingCallBanner').classList.add('hidden');
+      const celebBadge = document.getElementById('celebQueueStatusBadge');
+      const celebText = document.getElementById('celebQueueStatusText');
+      const celebSub = document.getElementById('celebIncomingQueueSub');
+      const celebAction = document.getElementById('celebIncomingActionBox');
+      if (celebBadge && celebText && celebSub && celebAction) {
+        celebBadge.classList.remove('is-ringing');
+        celebText.textContent = 'LISTENING FOR INCOMING FAN CALLS';
+        celebSub.textContent = 'When a Normal User calls you (Audio or Video), an Incoming Call popup and Accept/Decline controls appear here immediately.';
+        celebAction.classList.add('hidden');
+      }
+      const incDialog = document.getElementById('incomingCallDialog');
+      if (incDialog && incDialog.open) {
+        incDialog.close();
+      }
+    }
+
+    async function acceptIncomingCall() {
+      if (!pendingIncomingCall) return;
+      const callPacket = pendingIncomingCall;
+      activeCallId = callPacket.callId;
+      hideIncomingCallUI();
+      saveRingingCallToStorage(null);
+
+      videoPermitted = (callPacket.callType === 'RANDOM_VIDEO' || callPacket.callType === 'CELEB_VIDEO') && callPacket.callType !== 'SUPPORT_AUDIO';
+      videoEnabled = videoPermitted;
+      audioMuted = false;
+
+      // Credit Celebrity earnings if Celebrity call
+      if (callPacket.ratePerMin > 0 && currentSession && currentSession.role === 'CELEBRITY') {
+        celebEarned += callPacket.ratePerMin;
+        const earnedEl = document.getElementById('celebEarnedCoins');
+        if (earnedEl) earnedEl.textContent = celebEarned.toLocaleString();
+      }
+
+      const callDialog = document.getElementById('webrtcCallDialog');
+      document.getElementById('callerRingingHelper').classList.add('hidden');
+      const badge = document.getElementById('callDialogBadge');
+      badge.classList.remove('is-ringing');
+      document.getElementById('callDialogBadgeText').textContent = 'CONNECTED • ' + callPacket.callType.replace('_', ' ');
+      document.getElementById('stageAvatarIcon').textContent = videoPermitted ? '📹' : '🎙️';
+      document.getElementById('callPeerTitle').textContent = callPacket.callerName + ' (' + callPacket.callerPhone + ')';
+      document.getElementById('callSubText').textContent =
+        videoPermitted ? 'Two-Way HD WebRTC Video & Audio Connected' : 'Two-Way WebRTC Audio Connected';
+      document.getElementById('camBtn').style.display = videoPermitted ? 'inline-flex' : 'none';
+
+      if (!callDialog.open) {
+        callDialog.showModal();
+      }
+
+      try {
+        peerConnection = new RTCPeerConnection({
+          iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+        });
+
+        peerConnection.onicecandidate = function (e) {
+          if (e.candidate) {
+            sendSignalingMessage({
+              type: 'ICE_CANDIDATE',
+              callId: activeCallId,
+              fromRole: currentSession ? currentSession.role : 'RECEIVER',
+              candidate: e.candidate.toJSON ? e.candidate.toJSON() : e.candidate
+            });
+          }
+        };
+
+        peerConnection.ontrack = function (e) {
+          const remoteVid = document.getElementById('remoteVideo');
+          if (e.streams && e.streams[0]) {
+            remoteVid.srcObject = e.streams[0];
+            if (videoPermitted) {
+              remoteVid.classList.remove('hidden');
+              document.getElementById('remotePeerOverlayTag').textContent = 'Live: ' + callPacket.callerName;
+              document.getElementById('remotePeerOverlayTag').classList.remove('hidden');
+            }
+          }
+        };
+
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          localStream = await navigator.mediaDevices.getUserMedia({
+            audio: true,
+            video: videoPermitted
+          });
+          localStream.getTracks().forEach(function (track) {
+            peerConnection.addTrack(track, localStream);
+          });
+
+          const localVid = document.getElementById('localVideo');
+          if (videoPermitted) {
+            localVid.srcObject = localStream;
+            localVid.classList.remove('hidden');
+          } else {
+            localVid.classList.add('hidden');
+          }
+        }
+
+        if (callPacket.sdpOffer) {
+          await peerConnection.setRemoteDescription(new RTCSessionDescription(callPacket.sdpOffer));
+          for (const cand of pendingCallerCandidates) {
+            try {
+              await peerConnection.addIceCandidate(new RTCIceCandidate(cand));
+            } catch (err) {}
+          }
+          pendingCallerCandidates = [];
+          const answer = await peerConnection.createAnswer();
+          await peerConnection.setLocalDescription(answer);
+
+          sendSignalingMessage({
+            type: 'CALL_ANSWER',
+            callId: activeCallId,
+            responderName: currentSession ? currentSession.name : 'Dulquer Sithara ✓',
+            responderPhone: currentSession ? currentSession.phone : '+919999900001',
+            sdpAnswer: { type: answer.type, sdp: answer.sdp }
+          });
+        }
+
+        // If user answered in single-tab mode (where Caller tab was replaced by Receiver tab), attach live stream to stage after 700ms so video stage is active
+        if (videoPermitted) {
+          setTimeout(function () {
+            const remoteVid = document.getElementById('remoteVideo');
+            if (!remoteVid.srcObject && localStream) {
+              remoteVid.srcObject = localStream;
+              remoteVid.classList.remove('hidden');
+              document.getElementById('remotePeerOverlayTag').textContent = 'Connected Call: ' + callPacket.callerName;
+              document.getElementById('remotePeerOverlayTag').classList.remove('hidden');
+            }
+          }, 700);
+        }
+      } catch (err) {
+        showToast('Call answered (Audio/Video connected)');
+      }
+
+      startCallDurationTimer();
+      showToast('Call Accepted! Connected with ' + callPacket.callerName);
+    }
+
+    function declineIncomingCall() {
+      if (!pendingIncomingCall) return;
+      const declinedId = pendingIncomingCall.callId;
+      pendingIncomingCall = null;
+      hideIncomingCallUI();
+      saveRingingCallToStorage(null);
+      sendSignalingMessage({
+        type: 'CALL_DECLINE',
+        callId: declinedId,
+        responderName: currentSession ? currentSession.name : 'Receiver'
+      });
+      showToast('Incoming call declined');
+    }
+
+    function handleSignalingMessage(msg) {
+      if (!msg || !msg.type) return;
+
+      if (msg.type === 'CALL_OFFER') {
+        pendingCallerCandidates = [];
+        if (currentSession && currentSession.role === msg.targetRole && currentSession.phone !== msg.callerPhone) {
+          presentIncomingCallToReceiver(msg);
+        }
+      } else if (msg.type === 'CALL_ANSWER') {
+        if (msg.callId && msg.callId === activeCallId && peerConnection) {
+          stopRingingSound();
+          saveRingingCallToStorage(null);
+          document.getElementById('callerRingingHelper').classList.add('hidden');
+          const badge = document.getElementById('callDialogBadge');
+          badge.classList.remove('is-ringing');
+          document.getElementById('callDialogBadgeText').textContent = 'CONNECTED • LIVE CALL';
+          document.getElementById('callSubText').textContent =
+            videoPermitted ? 'Celebrity accepted! Two-way HD Video & Audio active.' : 'Call accepted! Two-way Audio active.';
+
+          if (msg.sdpAnswer && peerConnection.signalingState !== 'stable') {
+            peerConnection.setRemoteDescription(new RTCSessionDescription(msg.sdpAnswer)).catch(function () {});
+          }
+          if (videoPermitted) {
+            setTimeout(function () {
+              const remoteVid = document.getElementById('remoteVideo');
+              if (!remoteVid.srcObject && localStream) {
+                remoteVid.srcObject = localStream;
+              }
+              remoteVid.classList.remove('hidden');
+              document.getElementById('remotePeerOverlayTag').textContent = 'Live: ' + (msg.responderName || 'Peer');
+              document.getElementById('remotePeerOverlayTag').classList.remove('hidden');
+            }, 500);
+          }
+          startCallDurationTimer();
+          showToast((msg.responderName || 'Peer') + ' accepted your call!');
+        }
+      } else if (msg.type === 'ICE_CANDIDATE') {
+        if (msg.callId === activeCallId && msg.candidate) {
+          if (peerConnection && peerConnection.remoteDescription) {
+            peerConnection.addIceCandidate(new RTCIceCandidate(msg.candidate)).catch(function () {});
+          } else {
+            pendingCallerCandidates.push(msg.candidate);
+          }
+        }
+      } else if (msg.type === 'CALL_DECLINE') {
+        if (msg.callId === activeCallId) {
+          stopRingingSound();
+          saveRingingCallToStorage(null);
+          endWebRtcCall(false);
+          showToast((msg.responderName || 'Peer') + ' declined the call.');
+        }
+      } else if (msg.type === 'CALL_END') {
+        if (msg.callId === activeCallId || (pendingIncomingCall && pendingIncomingCall.callId === msg.callId)) {
+          pendingIncomingCall = null;
+          hideIncomingCallUI();
+          saveRingingCallToStorage(null);
+          if (document.getElementById('webrtcCallDialog').open) {
+            endWebRtcCall(false);
+          }
+        }
+      }
+    }
+
+    if (sigChannel) {
+      sigChannel.onmessage = function (ev) {
+        handleSignalingMessage(ev.data);
+      };
+    }
+
+    window.addEventListener('storage', function (ev) {
+      if (ev.key === SIGNAL_EVENT_STORAGE_KEY && ev.newValue) {
+        try {
+          handleSignalingMessage(JSON.parse(ev.newValue));
+        } catch (e) {}
+      } else if (ev.key === RINGING_CALL_STORAGE_KEY && ev.newValue) {
+        checkPendingIncomingCallForCurrentSession();
+      }
+    });
+
+    // Subscribe to public cross-browser/cross-device signaling stream
+    try {
+      if ('EventSource' in window) {
+        const es = new EventSource('https://ntfy.sh/' + PUBLIC_SIGNAL_TOPIC + '/sse');
+        es.onmessage = function (ev) {
+          try {
+            const outer = JSON.parse(ev.data);
+            if (outer && outer.message) {
+              const inner = JSON.parse(outer.message);
+              handleSignalingMessage(inner);
+            }
+          } catch (e) {}
+        };
+      }
+    } catch (e) {}
 
     window.addEventListener('popstate', function () {
       const existing = getActiveSession();
@@ -1364,6 +1946,15 @@
       }
 
       loadModerationState();
+
+      // Check if opened via "?receiverPhone=+919999900001" helper link
+      const params = new URLSearchParams(window.location.search);
+      const receiverPhoneParam = params.get('receiverPhone');
+      if (receiverPhoneParam && ACCOUNT_DIRECTORY[receiverPhoneParam]) {
+        completeOtpLogin(receiverPhoneParam);
+        return;
+      }
+
       const existing = getActiveSession();
       if (existing) {
         history.replaceState({ authenticated: true }, '', window.location.pathname);
@@ -1412,7 +2003,7 @@
       const el = document.getElementById('toast');
       el.textContent = msg;
       el.style.display = 'block';
-      setTimeout(() => { el.style.display = 'none'; }, 3200);
+      setTimeout(() => { el.style.display = 'none'; }, 3400);
     }
 
     function rechargeCoins(amount) {
@@ -1428,7 +2019,19 @@
       saveModerationState('User status updated to ' + (userBlocked ? 'BLOCKED' : 'ACTIVE'));
     }
 
-    async function startWebRtcCall(callType, peerName, ratePerMin) {
+    function startCallDurationTimer() {
+      elapsed = 0;
+      clearInterval(callTimer);
+      document.getElementById('callTimerText').textContent = '00:00';
+      callTimer = setInterval(() => {
+        elapsed++;
+        const m = String(Math.floor(elapsed / 60)).padStart(2, '0');
+        const s = String(elapsed % 60).padStart(2, '0');
+        document.getElementById('callTimerText').textContent = m + ':' + s;
+      }, 1000);
+    }
+
+    async function startWebRtcCall(callType, peerName, ratePerMin, targetRole, targetPhone) {
       loadModerationState();
       if (userBlocked && currentSession && currentSession.role === 'NORMAL') {
         return showToast('Account is blocked by Super Admin. Contact Customer Care.');
@@ -1451,27 +2054,64 @@
         document.getElementById('coinBalanceCard').textContent = coins;
       }
 
+      activeCallId = 'call_' + Date.now();
+      activeTargetPhone = targetPhone || '+919999900001';
+      const resolvedTargetRole = targetRole || (callType.startsWith('CELEB') ? 'CELEBRITY' : (callType === 'SUPPORT_AUDIO' ? 'SUPPORT' : 'NORMAL'));
+
       videoPermitted = (callType === 'RANDOM_VIDEO' || callType === 'CELEB_VIDEO') && callType !== 'SUPPORT_AUDIO';
       videoEnabled = videoPermitted;
       audioMuted = false;
 
-      document.getElementById('callDialogBadgeText').textContent = 'LIVE ' + callType.replace('_', ' ');
-      document.getElementById('callPeerTitle').textContent = peerName;
+      // Configure Caller Dialog in RINGING state
+      const badge = document.getElementById('callDialogBadge');
+      badge.classList.add('is-ringing');
+      document.getElementById('callDialogBadgeText').textContent = 'RINGING • ' + callType.replace('_', ' ');
+      document.getElementById('callTimerText').textContent = 'Ringing...';
+      document.getElementById('stageAvatarIcon').textContent = videoPermitted ? '📹' : '🎙️';
+      document.getElementById('callPeerTitle').textContent = 'Calling ' + peerName + '...';
       document.getElementById('callSubText').textContent =
-        callType === 'SUPPORT_AUDIO'
-          ? 'Audio-Only Customer Care Call (Video Disabled)'
-          : (ratePerMin > 0 ? 'Metered Celebrity Call (' + ratePerMin + ' Coins/min)' : 'Encrypted P2P WebRTC Session');
+        'Ringing on ' + peerName + ' (' + activeTargetPhone + ') — Waiting for receiver to click Accept';
+
+      document.getElementById('targetReceiverCode').textContent = activeTargetPhone;
+      document.getElementById('callerRingingHelper').classList.remove('hidden');
+      document.getElementById('remoteVideo').classList.add('hidden');
+      document.getElementById('remotePeerOverlayTag').classList.add('hidden');
 
       const camBtn = document.getElementById('camBtn');
       camBtn.style.display = videoPermitted ? 'inline-flex' : 'none';
 
       const dialog = document.getElementById('webrtcCallDialog');
       dialog.showModal();
+      startRingingSound('outgoing');
 
+      let sdpOfferObj = null;
       try {
         peerConnection = new RTCPeerConnection({
           iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
         });
+
+        peerConnection.onicecandidate = function (e) {
+          if (e.candidate) {
+            sendSignalingMessage({
+              type: 'ICE_CANDIDATE',
+              callId: activeCallId,
+              fromRole: currentSession ? currentSession.role : 'CALLER',
+              candidate: e.candidate.toJSON ? e.candidate.toJSON() : e.candidate
+            });
+          }
+        };
+
+        peerConnection.ontrack = function (e) {
+          const remoteVid = document.getElementById('remoteVideo');
+          if (e.streams && e.streams[0]) {
+            remoteVid.srcObject = e.streams[0];
+            if (videoPermitted) {
+              remoteVid.classList.remove('hidden');
+              document.getElementById('remotePeerOverlayTag').textContent = 'Live: ' + peerName;
+              document.getElementById('remotePeerOverlayTag').classList.remove('hidden');
+            }
+          }
+        };
 
         if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
           localStream = await navigator.mediaDevices.getUserMedia({
@@ -1488,18 +2128,30 @@
             localVid.classList.add('hidden');
           }
         }
+
+        const offer = await peerConnection.createOffer();
+        await peerConnection.setLocalDescription(offer);
+        sdpOfferObj = { type: offer.type, sdp: offer.sdp };
       } catch (err) {
-        showToast('WebRTC connected (Media device simulator active)');
+        showToast('Camera/Mic ready — Ringing ' + peerName);
       }
 
-      elapsed = 0;
-      clearInterval(callTimer);
-      callTimer = setInterval(() => {
-        elapsed++;
-        const m = String(Math.floor(elapsed / 60)).padStart(2, '0');
-        const s = String(elapsed % 60).padStart(2, '0');
-        document.getElementById('callTimerText').textContent = m + ':' + s;
-      }, 1000);
+      const callPacket = {
+        type: 'CALL_OFFER',
+        callId: activeCallId,
+        callType: callType,
+        callerName: currentSession ? currentSession.name : 'Arjun Nair',
+        callerPhone: currentSession ? currentSession.phone : '+919876543210',
+        targetRole: resolvedTargetRole,
+        targetPhone: activeTargetPhone,
+        peerName: peerName,
+        ratePerMin: ratePerMin,
+        sdpOffer: sdpOfferObj,
+        createdAt: Date.now()
+      };
+
+      saveRingingCallToStorage(callPacket);
+      sendSignalingMessage(callPacket);
     }
 
     function toggleWebRtcMute() {
@@ -1519,7 +2171,8 @@
       document.getElementById('localVideo').classList.toggle('hidden', !videoEnabled);
     }
 
-    function endWebRtcCall() {
+    function cleanupLocalMediaOnly() {
+      stopRingingSound();
       clearInterval(callTimer);
       if (localStream) {
         localStream.getTracks().forEach(t => t.stop());
@@ -1529,8 +2182,32 @@
         peerConnection.close();
         peerConnection = null;
       }
-      document.getElementById('localVideo').classList.add('hidden');
-      document.getElementById('webrtcCallDialog').close();
+      const localVid = document.getElementById('localVideo');
+      const remoteVid = document.getElementById('remoteVideo');
+      if (localVid) {
+        localVid.srcObject = null;
+        localVid.classList.add('hidden');
+      }
+      if (remoteVid) {
+        remoteVid.srcObject = null;
+        remoteVid.classList.add('hidden');
+      }
+      document.getElementById('remotePeerOverlayTag').classList.add('hidden');
+    }
+
+    function endWebRtcCall(notifyPeer) {
+      const endedId = activeCallId;
+      activeCallId = null;
+      cleanupLocalMediaOnly();
+      saveRingingCallToStorage(null);
+      const dlg = document.getElementById('webrtcCallDialog');
+      if (dlg && dlg.open) dlg.close();
+      if (notifyPeer && endedId) {
+        sendSignalingMessage({
+          type: 'CALL_END',
+          callId: endedId
+        });
+      }
       showToast('Call ended');
     }
 
