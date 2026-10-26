@@ -600,8 +600,8 @@
       /* Native Modal Dialogs per modern-web-guidance */
       dialog {
         margin: auto;
-        width: 92%;
-        max-width: 560px;
+        width: 94%;
+        max-width: 600px;
         background-color: var(--bg-surface);
         color: var(--text-primary);
         border: 1px solid var(--border-subtle);
@@ -623,7 +623,7 @@
 
       .video-stage {
         position: relative;
-        height: 290px;
+        height: 320px;
         background-color: #09090b;
         border: 1px solid var(--border-subtle);
         border-radius: var(--radius-md);
@@ -651,20 +651,45 @@
         animation: ringPulse 1.5s ease-in-out infinite;
       }
 
-      #localVideo {
+      .local-pip-wrapper {
         position: absolute;
         bottom: 12px;
         right: 12px;
-        width: 136px;
-        height: 98px;
+        width: 148px;
+        height: 108px;
         border-radius: var(--radius-sm);
         background: #18181b;
         border: 2px solid #ffffff;
-        object-fit: cover;
-        z-index: 5;
+        overflow: hidden;
+        z-index: 6;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
       }
 
-      #remoteVideo {
+      #localVideo {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+
+      .local-pip-label {
+        position: absolute;
+        bottom: 4px;
+        left: 6px;
+        right: 6px;
+        background: rgba(9, 9, 11, 0.78);
+        color: #ffffff;
+        font-size: 0.68rem;
+        font-weight: 600;
+        padding: 2px 6px;
+        border-radius: 4px;
+        text-align: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      #remoteVideo, #remoteFrameStream {
         position: absolute;
         inset: 0;
         width: 100%;
@@ -678,13 +703,13 @@
         top: 12px;
         left: 12px;
         z-index: 6;
-        background: rgba(9, 9, 11, 0.78);
+        background: rgba(22, 163, 74, 0.9);
         color: #fff;
         font-size: 0.75rem;
         font-weight: 600;
-        padding: 0.3rem 0.65rem;
+        padding: 0.35rem 0.75rem;
         border-radius: var(--radius-sm);
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.25);
       }
 
       .ringing-helper-box {
@@ -762,7 +787,7 @@
         </div>
 
         <div style="margin-top:2rem;font-size:0.75rem;color:var(--text-muted);">
-          Role-Isolated Session Cookies • Two-Way WebRTC Signaling • Web, Android & iOS
+          Role-Isolated Session Cookies • Two-Way WebRTC Video & Audio • Web, Android & iOS
         </div>
       </div>
 
@@ -771,7 +796,6 @@
         <h2 style="font-size:1.35rem;margin-bottom:0.25rem;">Sign in to your account</h2>
         <p class="sub" style="margin-bottom:1rem;">Select an account below to pre-fill or enter your mobile number and 6-digit OTP.</p>
 
-        <!-- Notification shown on Login Screen if a Call is currently ringing -->
         <div id="loginRingingNotice" class="ringing-helper-box hidden">
           <strong style="display:block;color:var(--status-warn-fg);margin-bottom:0.25rem;">
             🔔 Active Call Ringing for Celebrity (+919999900001)
@@ -889,7 +913,7 @@
             <span class="status-dot"></span> INCOMING CALL RINGING NOW
           </span>
           <h3 id="bannerCallerTitle" style="font-size:1.15rem;">Incoming Video Call from Arjun Nair (+919876543210)</h3>
-          <p class="sub" id="bannerCallerSub">Click Accept Call below to enable your camera/mic and answer this call.</p>
+          <p class="sub" id="bannerCallerSub">Click Accept Call below to enable your camera/mic and stream two-way video.</p>
         </div>
         <div style="display:flex;gap:0.625rem;flex-wrap:wrap;">
           <button type="button" class="btn btn-accept" onclick="acceptIncomingCall()">
@@ -950,7 +974,7 @@
           <div class="section-head">
             <div>
               <h2>Verified Celebrities — Feed & Direct Calls</h2>
-              <p class="sub">When you start an Audio or Video Call, an Incoming Call Popup (Accept / Reject) rings on the Celebrity's account (+919999900001).</p>
+              <p class="sub">For live two-way video between Normal User and Celebrity, keep Celebrity (+919999900001) open in a second tab/window and click Video Call.</p>
             </div>
             <button type="button" class="btn btn-subtle" onclick="openReceiverTab('+919999900001')">
               ↗ Open Celebrity Side (+919999900001) in New Tab
@@ -1125,7 +1149,6 @@
 
       <!-- ==================== 2. CELEBRITY ACCOUNT VIEW ==================== -->
       <div id="role-CELEBRITY" class="role-view hidden">
-        <!-- Celebrity Live Incoming Call Queue Card -->
         <div class="card" style="margin-bottom:1.5rem;">
           <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:1rem;">
             <div>
@@ -1351,14 +1374,25 @@
     </div>
 
     <div class="video-stage">
-      <div id="remotePeerOverlayTag" class="remote-peer-tag hidden">Connected Peer Stream</div>
+      <!-- Top-left badge identifying the OTHER person's incoming stream -->
+      <div id="remotePeerOverlayTag" class="remote-peer-tag hidden">Remote Peer Video</div>
+
+      <!-- Main Stage: EXCLUSIVELY for the OTHER person's video (NEVER set to localStream) -->
       <video id="remoteVideo" autoplay playsinline class="hidden"></video>
-      <div id="audioAvatarStage" style="text-align:center;z-index:2;padding:1rem;">
+      <img id="remoteFrameStream" alt="Remote Peer Video Stream" class="hidden" />
+
+      <!-- Center Placeholder shown while ringing or when remote camera is off -->
+      <div id="audioAvatarStage" style="text-align:center;z-index:2;padding:1rem;max-width:420px;">
         <div class="call-avatar" id="stageAvatarIcon">📹</div>
         <h2 id="callPeerTitle" style="color:#fff;font-size:1.2rem;">Peer Name</h2>
-        <p class="sub" id="callSubText" style="color:#a1a1aa;margin-top:0.25rem;">Ringing on receiver's account...</p>
+        <p class="sub" id="callSubText" style="color:#a1a1aa;margin-top:0.25rem;">Waiting for remote peer's video stream...</p>
       </div>
-      <video id="localVideo" autoplay muted playsinline class="hidden"></video>
+
+      <!-- Bottom-Right Picture-in-Picture: EXCLUSIVELY for YOUR OWN camera (localStream) -->
+      <div id="localPipContainer" class="local-pip-wrapper hidden">
+        <video id="localVideo" autoplay muted playsinline></video>
+        <div class="local-pip-label" id="localPipLabel">You (Your Camera)</div>
+      </div>
     </div>
 
     <!-- Action Box shown to Caller while Call is Ringing -->
@@ -1367,25 +1401,28 @@
         🔔 Call is Ringing on Receiver Account (<code id="targetReceiverCode">+919999900001</code>)
       </div>
       <p class="sub" style="font-size:0.8125rem;margin-bottom:0.75rem;color:var(--text-primary);">
-        Switch to the Celebrity / Receiver account to see the <strong>Accept Call / Reject Call</strong> popup:
+        To send & receive live two-way video between both sides, keep this tab open and answer in the Celebrity tab:
       </p>
       <div style="display:flex;flex-wrap:wrap;gap:0.5rem;">
-        <button type="button" class="btn btn-accept" style="flex:1;font-size:0.82rem;min-height:42px;" onclick="switchHereToAnswerCall()">
-          ⇄ Switch to Celebrity Side Now to Accept Call
+        <button type="button" class="btn btn-accept" style="flex:1;font-size:0.82rem;min-height:42px;" onclick="openTargetReceiverFromCall()">
+          ↗ Open Celebrity Tab (+919999900001) to Accept Two-Way Video
         </button>
-        <button type="button" class="btn btn-secondary" style="font-size:0.82rem;min-height:42px;" onclick="openTargetReceiverFromCall()">
-          ↗ Open Celebrity in New Tab
+        <button type="button" class="btn btn-secondary" style="font-size:0.82rem;min-height:42px;" onclick="switchHereToAnswerCall()">
+          ⇄ Switch Account in This Tab
         </button>
       </div>
     </div>
 
     <div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:0.5rem;">
       <button type="button" class="btn btn-secondary" id="muteBtn" onclick="toggleWebRtcMute()">Mute Mic</button>
-      <button type="button" class="btn btn-secondary" id="camBtn" onclick="toggleWebRtcCamera()">Toggle Camera</button>
+      <button type="button" class="btn btn-secondary" id="camBtn" onclick="toggleWebRtcCamera()">Toggle My Camera</button>
       <button type="button" class="btn btn-subtle" id="keepRingingSignOutBtn" onclick="signOutKeepingCallRinging()">Sign Out (Keep Ringing)</button>
       <button type="button" class="btn btn-reject" onclick="endWebRtcCall(true)">End / Cancel Call</button>
     </div>
   </dialog>
+
+  <!-- Offscreen Canvas for Two-Way Frame Bridge across tabs/devices -->
+  <canvas id="frameCaptureCanvas" width="320" height="240" class="hidden"></canvas>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
@@ -1402,30 +1439,48 @@
     const SESSION_STORAGE_KEY = 'fc_auth_session_v1';
     const TAB_SESSION_KEY = 'fc_tab_session_v1';
     const MODERATION_STORAGE_KEY = 'fc_moderation_v1';
-    const RINGING_CALL_STORAGE_KEY = 'fc_active_ringing_call_v4';
-    const SIGNAL_EVENT_STORAGE_KEY = 'fc_webrtc_sig_event_v4';
-    const PUBLIC_SIGNAL_TOPIC = 'fc_webrtc_live_nikhil_v4';
+    const RINGING_CALL_STORAGE_KEY = 'fc_active_ringing_call_v5';
+    const SIGNAL_EVENT_STORAGE_KEY = 'fc_webrtc_sig_event_v5';
+    const FRAME_BRIDGE_STORAGE_KEY = 'fc_webrtc_frame_bridge_v5';
+    const PUBLIC_SIGNAL_TOPIC = 'fc_webrtc_live_nikhil_v5';
+
+    // Unique ID per browser tab/window so a tab NEVER renders its own video as remote video
+    const TAB_INSTANCE_ID = 'tab_' + Math.random().toString(36).slice(2, 10) + '_' + Date.now();
+
+    const RTC_CONFIG = {
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' },
+        { urls: 'stun:stun.cloudflare.com:3478' }
+      ]
+    };
 
     let coins = 650;
     let celebEarned = 14500;
     let userBlocked = false;
     let localStream = null;
+    let inboundRemoteStream = null;
     let peerConnection = null;
     let callTimer = null;
     let ringToneTimer = null;
+    let frameBridgeTimer = null;
     let elapsed = 0;
     let audioMuted = false;
     let videoEnabled = false;
     let videoPermitted = false;
+    let hasNativeRemoteVideoTrack = false;
     let currentSession = null;
 
     let activeCallId = null;
     let activeCallConnected = false;
     let activeTargetPhone = '+919999900001';
+    let currentRemotePeerLabel = 'Remote Peer';
     let pendingIncomingCall = null;
-    let pendingCallerCandidates = [];
+    let pendingRemoteCandidates = [];
+    let waitingToAnswerWhenOfferSdpReady = false;
     let handledCallIds = {};
-    const sigChannel = ('BroadcastChannel' in window) ? new BroadcastChannel('fc_webrtc_sig_v4') : null;
+    const sigChannel = ('BroadcastChannel' in window) ? new BroadcastChannel('fc_webrtc_sig_v5') : null;
 
     let audioCtx = null;
     function playRingPulse(mode) {
@@ -1467,20 +1522,91 @@
       }
     }
 
-    function sendSignalingMessage(payload) {
-      const msg = Object.assign({}, payload, { ts: Date.now() });
+    function waitForIceGathering(pc, timeoutMs) {
+      return new Promise(function (resolve) {
+        if (!pc || pc.iceGatheringState === 'complete') {
+          return resolve();
+        }
+        let finished = false;
+        const done = function () {
+          if (finished) return;
+          finished = true;
+          pc.removeEventListener('icegatheringstatechange', onState);
+          resolve();
+        };
+        const onState = function () {
+          if (pc.iceGatheringState === 'complete') {
+            done();
+          }
+        };
+        pc.addEventListener('icegatheringstatechange', onState);
+        setTimeout(done, timeoutMs || 1200);
+      });
+    }
+
+    function sendSignalingMessage(payload, skipCloud) {
+      const msg = Object.assign({}, payload, {
+        senderTabId: TAB_INSTANCE_ID,
+        ts: Date.now()
+      });
       try {
         if (sigChannel) sigChannel.postMessage(msg);
       } catch (e) {}
       try {
         localStorage.setItem(SIGNAL_EVENT_STORAGE_KEY, JSON.stringify(msg));
       } catch (e) {}
-      try {
-        fetch('https://ntfy.sh/' + PUBLIC_SIGNAL_TOPIC, {
-          method: 'POST',
-          body: JSON.stringify(msg)
-        }).catch(function () {});
-      } catch (e) {}
+      if (!skipCloud) {
+        try {
+          fetch('https://ntfy.sh/' + PUBLIC_SIGNAL_TOPIC, {
+            method: 'POST',
+            body: JSON.stringify(msg)
+          }).catch(function () {});
+        } catch (e) {}
+      }
+    }
+
+    // Two-Way Live Video Frame Bridge: transmits THIS tab's camera frames to the OTHER tab's main stage
+    function startTwoWayFrameBridge() {
+      stopTwoWayFrameBridge();
+      if (!videoPermitted) return;
+      const canvas = document.getElementById('frameCaptureCanvas');
+      const ctx = canvas ? canvas.getContext('2d') : null;
+      const localVid = document.getElementById('localVideo');
+
+      frameBridgeTimer = setInterval(function () {
+        if (!activeCallConnected || !videoPermitted || !videoEnabled) return;
+        if (!localVid || localVid.readyState < 2 || !ctx) return;
+        try {
+          ctx.drawImage(localVid, 0, 0, canvas.width, canvas.height);
+          // Stamp sender identity on outgoing frame so receiver clearly sees who is sending the stream
+          ctx.fillStyle = 'rgba(9, 9, 11, 0.72)';
+          ctx.fillRect(8, 8, 225, 24);
+          ctx.fillStyle = '#86efac';
+          ctx.font = '600 12px Inter, sans-serif';
+          const senderTag = currentSession ? (currentSession.name + ' (' + currentSession.role + ')') : 'Peer';
+          ctx.fillText('● LIVE FROM: ' + senderTag.slice(0, 22), 14, 24);
+
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.55);
+          const framePacket = {
+            type: 'LIVE_VIDEO_FRAME',
+            callId: activeCallId,
+            senderTabId: TAB_INSTANCE_ID,
+            senderName: currentSession ? currentSession.name : 'Peer',
+            senderPhone: currentSession ? currentSession.phone : '',
+            dataUrl: dataUrl,
+            ts: Date.now()
+          };
+          if (sigChannel) sigChannel.postMessage(framePacket);
+          localStorage.setItem(FRAME_BRIDGE_STORAGE_KEY, JSON.stringify(framePacket));
+        } catch (e) {}
+      }, 220);
+    }
+
+    function stopTwoWayFrameBridge() {
+      if (frameBridgeTimer) {
+        clearInterval(frameBridgeTimer);
+        frameBridgeTimer = null;
+      }
     }
 
     function saveRingingCallToStorage(callObj) {
@@ -1611,7 +1737,6 @@
         targetView.classList.remove('hidden');
       }
 
-      // Immediately check local and cloud ringing queue for this session
       checkPendingIncomingCallForCurrentSession();
       pollCloudSignalingHistory();
     }
@@ -1690,7 +1815,6 @@
       }
     }
 
-    // Poll ntfy.sh cached JSON history so even Incognito or a second browser/device gets the Incoming Call Popup
     async function pollCloudSignalingHistory() {
       if (!currentSession) return;
       try {
@@ -1708,10 +1832,18 @@
             const msg = JSON.parse(env.message);
             if (!msg || !msg.callId) continue;
             if (msg.type === 'CALL_OFFER') {
-              latestOfferById[msg.callId] = msg;
-            } else if (msg.type === 'CALL_ANSWER' || msg.type === 'CALL_DECLINE' || msg.type === 'CALL_END') {
+              // Keep the offer that has sdpOffer if available
+              if (!latestOfferById[msg.callId] || msg.sdpOffer) {
+                latestOfferById[msg.callId] = msg;
+              }
+            } else if (msg.type === 'CALL_ANSWER') {
               closedCallIds[msg.callId] = msg;
-              if (msg.callId === activeCallId) {
+              if (msg.callId === activeCallId && msg.senderTabId !== TAB_INSTANCE_ID) {
+                handleSignalingMessage(msg);
+              }
+            } else if (msg.type === 'CALL_DECLINE' || msg.type === 'CALL_END') {
+              closedCallIds[msg.callId] = msg;
+              if (msg.callId === activeCallId && msg.senderTabId !== TAB_INSTANCE_ID) {
                 handleSignalingMessage(msg);
               }
             }
@@ -1735,7 +1867,19 @@
     function presentIncomingCallToReceiver(callPacket) {
       if (!currentSession || currentSession.role !== callPacket.targetRole) return;
       if (handledCallIds[callPacket.callId]) return;
+
+      // Always keep the SDP offer if an earlier or later packet provided it
+      if (pendingIncomingCall && pendingIncomingCall.callId === callPacket.callId && pendingIncomingCall.sdpOffer && !callPacket.sdpOffer) {
+        callPacket.sdpOffer = pendingIncomingCall.sdpOffer;
+      }
       pendingIncomingCall = callPacket;
+
+      // If user ALREADY clicked Accept Call while waiting for Caller's camera/SDP offer to finish, complete the answer now!
+      if (waitingToAnswerWhenOfferSdpReady && callPacket.sdpOffer && activeCallId === callPacket.callId) {
+        waitingToAnswerWhenOfferSdpReady = false;
+        completeReceiverWebRtcHandshake(callPacket);
+        return;
+      }
 
       const isVideo = callPacket.callType === 'RANDOM_VIDEO' || callPacket.callType === 'CELEB_VIDEO';
       const modeLabel = isVideo ? 'INCOMING VIDEO CALL RINGING' : 'INCOMING AUDIO CALL RINGING';
@@ -1792,13 +1936,97 @@
       }
     }
 
+    // Attach remote MediaStream to #remoteVideo (STRICTLY from remote peer, NEVER localStream!)
+    function attachRemotePeerStream(stream, peerLabel) {
+      if (!stream) return;
+      // Safety guard: never attach our own localStream to #remoteVideo
+      if (localStream && stream.id === localStream.id) return;
+
+      const remoteVid = document.getElementById('remoteVideo');
+      if (remoteVid.srcObject !== stream) {
+        remoteVid.srcObject = stream;
+      }
+      hasNativeRemoteVideoTrack = stream.getVideoTracks().length > 0;
+      if (videoPermitted) {
+        remoteVid.classList.remove('hidden');
+        document.getElementById('remoteFrameStream').classList.add('hidden');
+        document.getElementById('audioAvatarStage').classList.add('hidden');
+        document.getElementById('remotePeerOverlayTag').textContent = '● Live Video from ' + (peerLabel || currentRemotePeerLabel);
+        document.getElementById('remotePeerOverlayTag').classList.remove('hidden');
+      }
+      remoteVid.play().catch(function () {});
+    }
+
+    function createConfiguredPeerConnection(peerLabel) {
+      if (peerConnection) {
+        try { peerConnection.close(); } catch (e) {}
+      }
+      inboundRemoteStream = new MediaStream();
+      hasNativeRemoteVideoTrack = false;
+
+      const pc = new RTCPeerConnection(RTC_CONFIG);
+
+      pc.onicecandidate = function (e) {
+        if (e.candidate && activeCallId) {
+          sendSignalingMessage({
+            type: 'ICE_CANDIDATE',
+            callId: activeCallId,
+            candidate: e.candidate.toJSON ? e.candidate.toJSON() : e.candidate
+          });
+        }
+      };
+
+      pc.ontrack = function (e) {
+        if (e.streams && e.streams[0] && (!localStream || e.streams[0].id !== localStream.id)) {
+          attachRemotePeerStream(e.streams[0], peerLabel);
+        } else if (e.track) {
+          inboundRemoteStream.addTrack(e.track);
+          attachRemotePeerStream(inboundRemoteStream, peerLabel);
+        }
+      };
+
+      return pc;
+    }
+
+    async function completeReceiverWebRtcHandshake(callPacket) {
+      if (!peerConnection || !callPacket.sdpOffer) return;
+      try {
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(callPacket.sdpOffer));
+        for (const cand of pendingRemoteCandidates) {
+          try {
+            await peerConnection.addIceCandidate(new RTCIceCandidate(cand));
+          } catch (err) {}
+        }
+        pendingRemoteCandidates = [];
+
+        const answer = await peerConnection.createAnswer();
+        await peerConnection.setLocalDescription(answer);
+        await waitForIceGathering(peerConnection, 1200);
+
+        const finalAnswer = peerConnection.localDescription || answer;
+        sendSignalingMessage({
+          type: 'CALL_ANSWER',
+          callId: activeCallId,
+          responderName: currentSession ? currentSession.name : 'Dulquer Sithara ✓',
+          responderPhone: currentSession ? currentSession.phone : '+919999900001',
+          sdpAnswer: { type: finalAnswer.type, sdp: finalAnswer.sdp }
+        });
+      } catch (e) {}
+    }
+
     async function acceptIncomingCall() {
       if (!pendingIncomingCall) return;
+      // Check storage one more time in case the SDP offer arrived after the initial ring packet
+      const latestStored = getRingingCallFromStorage();
+      if (latestStored && latestStored.callId === pendingIncomingCall.callId && latestStored.sdpOffer) {
+        pendingIncomingCall.sdpOffer = latestStored.sdpOffer;
+      }
+
       const callPacket = pendingIncomingCall;
       handledCallIds[callPacket.callId] = true;
       activeCallId = callPacket.callId;
       activeCallConnected = true;
-      pendingIncomingCall = null;
+      currentRemotePeerLabel = callPacket.callerName + ' (' + callPacket.callerPhone + ')';
       hideIncomingCallUI();
       saveRingingCallToStorage(null);
 
@@ -1819,107 +2047,62 @@
       badge.classList.remove('is-ringing');
       document.getElementById('callDialogBadgeText').textContent = 'CONNECTED • ' + callPacket.callType.replace('_', ' ');
       document.getElementById('stageAvatarIcon').textContent = videoPermitted ? '📹' : '🎙️';
-      document.getElementById('callPeerTitle').textContent = callPacket.callerName + ' (' + callPacket.callerPhone + ')';
+      document.getElementById('callPeerTitle').textContent = currentRemotePeerLabel;
       document.getElementById('callSubText').textContent =
-        videoPermitted ? 'Two-Way HD WebRTC Video & Audio Connected' : 'Two-Way WebRTC Audio Connected';
+        videoPermitted
+          ? 'Connected! Streaming live video from ' + callPacket.callerName + ' (keep Caller tab open for 2-way camera)'
+          : 'Two-Way WebRTC Audio Connected';
       document.getElementById('camBtn').style.display = videoPermitted ? 'inline-flex' : 'none';
+      document.getElementById('audioAvatarStage').classList.remove('hidden');
+      document.getElementById('remoteVideo').classList.add('hidden');
+      document.getElementById('remoteFrameStream').classList.add('hidden');
 
       if (!callDialog.open) {
         callDialog.showModal();
       }
 
-      // Immediately notify Caller that Receiver Accepted
-      sendSignalingMessage({
-        type: 'CALL_ANSWER',
-        callId: activeCallId,
-        responderName: currentSession ? currentSession.name : 'Dulquer Sithara ✓',
-        responderPhone: currentSession ? currentSession.phone : '+919999900001',
-        sdpAnswer: null
-      });
+      peerConnection = createConfiguredPeerConnection(currentRemotePeerLabel);
 
       try {
-        peerConnection = new RTCPeerConnection({
-          iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
-        });
-
-        peerConnection.onicecandidate = function (e) {
-          if (e.candidate) {
-            sendSignalingMessage({
-              type: 'ICE_CANDIDATE',
-              callId: activeCallId,
-              fromRole: currentSession ? currentSession.role : 'RECEIVER',
-              candidate: e.candidate.toJSON ? e.candidate.toJSON() : e.candidate
-            });
-          }
-        };
-
-        peerConnection.ontrack = function (e) {
-          const remoteVid = document.getElementById('remoteVideo');
-          if (e.streams && e.streams[0]) {
-            remoteVid.srcObject = e.streams[0];
-            if (videoPermitted) {
-              remoteVid.classList.remove('hidden');
-              document.getElementById('remotePeerOverlayTag').textContent = 'Live: ' + callPacket.callerName;
-              document.getElementById('remotePeerOverlayTag').classList.remove('hidden');
-            }
-          }
-        };
-
         if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
           localStream = await navigator.mediaDevices.getUserMedia({
             audio: true,
-            video: videoPermitted
+            video: videoPermitted ? { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' } : false
           });
           localStream.getTracks().forEach(function (track) {
             peerConnection.addTrack(track, localStream);
           });
 
           const localVid = document.getElementById('localVideo');
+          const localPip = document.getElementById('localPipContainer');
           if (videoPermitted) {
             localVid.srcObject = localStream;
-            localVid.classList.remove('hidden');
+            document.getElementById('localPipLabel').textContent = 'You (' + (currentSession ? currentSession.name : 'Camera') + ')';
+            localPip.classList.remove('hidden');
           } else {
-            localVid.classList.add('hidden');
+            localPip.classList.add('hidden');
           }
-        }
-
-        if (callPacket.sdpOffer) {
-          await peerConnection.setRemoteDescription(new RTCSessionDescription(callPacket.sdpOffer));
-          for (const cand of pendingCallerCandidates) {
-            try {
-              await peerConnection.addIceCandidate(new RTCIceCandidate(cand));
-            } catch (err) {}
-          }
-          pendingCallerCandidates = [];
-          const answer = await peerConnection.createAnswer();
-          await peerConnection.setLocalDescription(answer);
-
-          sendSignalingMessage({
-            type: 'CALL_ANSWER',
-            callId: activeCallId,
-            responderName: currentSession ? currentSession.name : 'Dulquer Sithara ✓',
-            responderPhone: currentSession ? currentSession.phone : '+919999900001',
-            sdpAnswer: { type: answer.type, sdp: answer.sdp }
-          });
-        }
-
-        if (videoPermitted) {
-          setTimeout(function () {
-            const remoteVid = document.getElementById('remoteVideo');
-            if (!remoteVid.srcObject && localStream) {
-              remoteVid.srcObject = localStream;
-              remoteVid.classList.remove('hidden');
-              document.getElementById('remotePeerOverlayTag').textContent = 'Connected Call: ' + callPacket.callerName;
-              document.getElementById('remotePeerOverlayTag').classList.remove('hidden');
-            }
-          }, 500);
         }
       } catch (err) {
-        showToast('Call Accepted & Connected');
+        showToast('Microphone/Camera connected');
       }
 
+      if (callPacket.sdpOffer) {
+        await completeReceiverWebRtcHandshake(callPacket);
+      } else {
+        waitingToAnswerWhenOfferSdpReady = true;
+        sendSignalingMessage({
+          type: 'CALL_ANSWER',
+          callId: activeCallId,
+          responderName: currentSession ? currentSession.name : 'Dulquer Sithara ✓',
+          responderPhone: currentSession ? currentSession.phone : '+919999900001',
+          sdpAnswer: null
+        });
+      }
+
+      startTwoWayFrameBridge();
       startCallDurationTimer();
-      showToast('Call Accepted! Connected with ' + callPacket.callerName);
+      showToast('Call Accepted! Two-way stream active with ' + callPacket.callerName);
     }
 
     function declineIncomingCall() {
@@ -1937,11 +2120,12 @@
       showToast('Call Rejected');
     }
 
-    function handleSignalingMessage(msg) {
+    async function handleSignalingMessage(msg) {
       if (!msg || !msg.type) return;
+      // Never process messages sent by THIS exact browser tab
+      if (msg.senderTabId && msg.senderTabId === TAB_INSTANCE_ID) return;
 
       if (msg.type === 'CALL_OFFER') {
-        pendingCallerCandidates = [];
         saveRingingCallToStorage(msg);
         if (currentSession && currentSession.role === msg.targetRole && currentSession.phone !== msg.callerPhone) {
           presentIncomingCallToReceiver(msg);
@@ -1952,29 +2136,32 @@
           activeCallConnected = true;
           stopRingingSound();
           saveRingingCallToStorage(null);
+          currentRemotePeerLabel = (msg.responderName || 'Dulquer Sithara ✓') + (msg.responderPhone ? ' (' + msg.responderPhone + ')' : '');
+
           document.getElementById('callerRingingHelper').classList.add('hidden');
           document.getElementById('keepRingingSignOutBtn').classList.add('hidden');
           const badge = document.getElementById('callDialogBadge');
           badge.classList.remove('is-ringing');
           document.getElementById('callDialogBadgeText').textContent = 'CONNECTED • LIVE CALL';
-          document.getElementById('callPeerTitle').textContent = msg.responderName || 'Dulquer Sithara ✓';
+          document.getElementById('callPeerTitle').textContent = currentRemotePeerLabel;
           document.getElementById('callSubText').textContent =
-            videoPermitted ? 'Celebrity accepted! Two-way HD Video & Audio active.' : 'Call accepted! Two-way Audio active.';
+            videoPermitted
+              ? 'Celebrity accepted! Receiving live video from ' + (msg.responderName || 'Celebrity')
+              : 'Call accepted! Two-way Audio active.';
 
           if (peerConnection && msg.sdpAnswer && peerConnection.signalingState !== 'stable') {
-            peerConnection.setRemoteDescription(new RTCSessionDescription(msg.sdpAnswer)).catch(function () {});
-          }
-          if (videoPermitted) {
-            setTimeout(function () {
-              const remoteVid = document.getElementById('remoteVideo');
-              if (!remoteVid.srcObject && localStream) {
-                remoteVid.srcObject = localStream;
+            try {
+              await peerConnection.setRemoteDescription(new RTCSessionDescription(msg.sdpAnswer));
+              for (const cand of pendingRemoteCandidates) {
+                try {
+                  await peerConnection.addIceCandidate(new RTCIceCandidate(cand));
+                } catch (err) {}
               }
-              remoteVid.classList.remove('hidden');
-              document.getElementById('remotePeerOverlayTag').textContent = 'Live: ' + (msg.responderName || 'Peer');
-              document.getElementById('remotePeerOverlayTag').classList.remove('hidden');
-            }, 400);
+              pendingRemoteCandidates = [];
+            } catch (e) {}
           }
+
+          startTwoWayFrameBridge();
           if (!callTimer) {
             startCallDurationTimer();
           }
@@ -1982,10 +2169,42 @@
         }
       } else if (msg.type === 'ICE_CANDIDATE') {
         if (msg.callId === activeCallId && msg.candidate) {
-          if (peerConnection && peerConnection.remoteDescription) {
+          if (peerConnection && peerConnection.remoteDescription && peerConnection.remoteDescription.type) {
             peerConnection.addIceCandidate(new RTCIceCandidate(msg.candidate)).catch(function () {});
           } else {
-            pendingCallerCandidates.push(msg.candidate);
+            pendingRemoteCandidates.push(msg.candidate);
+          }
+        }
+      } else if (msg.type === 'LIVE_VIDEO_FRAME') {
+        // Live frame from the OTHER tab's camera! Render on main stage if native WebRTC video track isn't active or as live peer stream
+        if (msg.callId === activeCallId && activeCallConnected && videoPermitted && msg.dataUrl) {
+          const frameImg = document.getElementById('remoteFrameStream');
+          const remoteVid = document.getElementById('remoteVideo');
+          if (!hasNativeRemoteVideoTrack || remoteVid.paused || remoteVid.readyState < 2) {
+            frameImg.src = msg.dataUrl;
+            frameImg.classList.remove('hidden');
+            document.getElementById('audioAvatarStage').classList.add('hidden');
+            document.getElementById('remotePeerOverlayTag').textContent = '● Live Video from ' + (msg.senderName || currentRemotePeerLabel);
+            document.getElementById('remotePeerOverlayTag').classList.remove('hidden');
+          }
+        }
+      } else if (msg.type === 'PEER_CAMERA_TOGGLED') {
+        if (msg.callId === activeCallId) {
+          const remoteVid = document.getElementById('remoteVideo');
+          const frameImg = document.getElementById('remoteFrameStream');
+          const avatarStage = document.getElementById('audioAvatarStage');
+          if (!msg.cameraEnabled) {
+            remoteVid.classList.add('hidden');
+            frameImg.classList.add('hidden');
+            avatarStage.classList.remove('hidden');
+            document.getElementById('callSubText').textContent = (msg.senderName || 'Remote peer') + ' turned off their camera';
+          } else {
+            avatarStage.classList.add('hidden');
+            if (hasNativeRemoteVideoTrack) {
+              remoteVid.classList.remove('hidden');
+            } else {
+              frameImg.classList.remove('hidden');
+            }
           }
         }
       } else if (msg.type === 'CALL_DECLINE') {
@@ -2016,7 +2235,7 @@
     }
 
     window.addEventListener('storage', function (ev) {
-      if (ev.key === SIGNAL_EVENT_STORAGE_KEY && ev.newValue) {
+      if ((ev.key === SIGNAL_EVENT_STORAGE_KEY || ev.key === FRAME_BRIDGE_STORAGE_KEY) && ev.newValue) {
         try {
           handleSignalingMessage(JSON.parse(ev.newValue));
         } catch (e) {}
@@ -2026,7 +2245,6 @@
       }
     });
 
-    // Continuous 700ms local watcher + 2.5s cloud watcher so Incoming Call Popup never misses an event
     setInterval(function () {
       updateLoginScreenRingingNotice();
       checkPendingIncomingCallForCurrentSession();
@@ -2201,15 +2419,18 @@
 
       activeCallId = 'call_' + Date.now();
       activeCallConnected = false;
+      pendingRemoteCandidates = [];
+      waitingToAnswerWhenOfferSdpReady = false;
       activeTargetPhone = targetPhone || '+919999900001';
+      currentRemotePeerLabel = peerName + ' (' + activeTargetPhone + ')';
       const resolvedTargetRole = targetRole || (callType.startsWith('CELEB') ? 'CELEBRITY' : (callType === 'SUPPORT_AUDIO' ? 'SUPPORT' : 'NORMAL'));
 
       videoPermitted = (callType === 'RANDOM_VIDEO' || callType === 'CELEB_VIDEO') && callType !== 'SUPPORT_AUDIO';
       videoEnabled = videoPermitted;
       audioMuted = false;
 
-      // STEP 1: IMMEDIATELY save & broadcast CALL_OFFER BEFORE waiting for getUserMedia so Receiver gets Popup in 0ms!
-      const initialCallPacket = {
+      // Broadcast initial ring offer immediately so Receiver pops up Accept / Reject right away
+      const baseCallPacket = {
         type: 'CALL_OFFER',
         callId: activeCallId,
         callType: callType,
@@ -2222,10 +2443,10 @@
         sdpOffer: null,
         createdAt: Date.now()
       };
-      saveRingingCallToStorage(initialCallPacket);
-      sendSignalingMessage(initialCallPacket);
+      saveRingingCallToStorage(baseCallPacket);
+      sendSignalingMessage(baseCallPacket);
 
-      // STEP 2: Open Caller Ringing Dialog
+      // Configure Caller Dialog: Main stage waits for OTHER person's video; corner PiP shows Caller's own camera
       const badge = document.getElementById('callDialogBadge');
       badge.classList.add('is-ringing');
       document.getElementById('callDialogBadgeText').textContent = 'RINGING • ' + callType.replace('_', ' ');
@@ -2233,12 +2454,14 @@
       document.getElementById('stageAvatarIcon').textContent = videoPermitted ? '📹' : '🎙️';
       document.getElementById('callPeerTitle').textContent = 'Calling ' + peerName + '...';
       document.getElementById('callSubText').textContent =
-        'Ringing on ' + peerName + ' (' + activeTargetPhone + ') — Waiting for Accept Call';
+        'Ringing on ' + peerName + ' (' + activeTargetPhone + '). Main screen will show ' + peerName + '\'s video once accepted.';
 
       document.getElementById('targetReceiverCode').textContent = activeTargetPhone;
       document.getElementById('callerRingingHelper').classList.remove('hidden');
       document.getElementById('keepRingingSignOutBtn').classList.remove('hidden');
+      document.getElementById('audioAvatarStage').classList.remove('hidden');
       document.getElementById('remoteVideo').classList.add('hidden');
+      document.getElementById('remoteFrameStream').classList.add('hidden');
       document.getElementById('remotePeerOverlayTag').classList.add('hidden');
 
       const camBtn = document.getElementById('camBtn');
@@ -2248,58 +2471,40 @@
       if (!dialog.open) dialog.showModal();
       startRingingSound('outgoing');
 
-      // STEP 3: Acquire Camera/Mic & attach WebRTC SDP Offer
+      peerConnection = createConfiguredPeerConnection(currentRemotePeerLabel);
+
       try {
-        peerConnection = new RTCPeerConnection({
-          iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
-        });
-
-        peerConnection.onicecandidate = function (e) {
-          if (e.candidate) {
-            sendSignalingMessage({
-              type: 'ICE_CANDIDATE',
-              callId: activeCallId,
-              fromRole: currentSession ? currentSession.role : 'CALLER',
-              candidate: e.candidate.toJSON ? e.candidate.toJSON() : e.candidate
-            });
-          }
-        };
-
-        peerConnection.ontrack = function (e) {
-          const remoteVid = document.getElementById('remoteVideo');
-          if (e.streams && e.streams[0]) {
-            remoteVid.srcObject = e.streams[0];
-            if (videoPermitted) {
-              remoteVid.classList.remove('hidden');
-              document.getElementById('remotePeerOverlayTag').textContent = 'Live: ' + peerName;
-              document.getElementById('remotePeerOverlayTag').classList.remove('hidden');
-            }
-          }
-        };
-
         if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
           localStream = await navigator.mediaDevices.getUserMedia({
             audio: true,
-            video: videoPermitted
+            video: videoPermitted ? { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' } : false
           });
           localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
 
           const localVid = document.getElementById('localVideo');
+          const localPip = document.getElementById('localPipContainer');
           if (videoPermitted) {
             localVid.srcObject = localStream;
-            localVid.classList.remove('hidden');
+            document.getElementById('localPipLabel').textContent = 'You (' + (currentSession ? currentSession.name : 'Camera') + ')';
+            localPip.classList.remove('hidden');
           } else {
-            localVid.classList.add('hidden');
+            localPip.classList.add('hidden');
           }
         }
 
-        const offer = await peerConnection.createOffer();
-        await peerConnection.setLocalDescription(offer);
-        const updatedPacket = Object.assign({}, initialCallPacket, {
-          sdpOffer: { type: offer.type, sdp: offer.sdp }
+        const offer = await peerConnection.createOffer({
+          offerToReceiveAudio: true,
+          offerToReceiveVideo: videoPermitted
         });
-        saveRingingCallToStorage(updatedPacket);
-        sendSignalingMessage(updatedPacket);
+        await peerConnection.setLocalDescription(offer);
+        await waitForIceGathering(peerConnection, 1200);
+
+        const finalOffer = peerConnection.localDescription || offer;
+        const fullOfferPacket = Object.assign({}, baseCallPacket, {
+          sdpOffer: { type: finalOffer.type, sdp: finalOffer.sdp }
+        });
+        saveRingingCallToStorage(fullOfferPacket);
+        sendSignalingMessage(fullOfferPacket);
       } catch (err) {
         showToast('Ringing ' + peerName + ' — Waiting for Accept Call');
       }
@@ -2319,30 +2524,48 @@
       if (localStream) {
         localStream.getVideoTracks().forEach(t => t.enabled = videoEnabled);
       }
-      document.getElementById('localVideo').classList.toggle('hidden', !videoEnabled);
+      document.getElementById('localPipContainer').classList.toggle('hidden', !videoEnabled);
+      document.getElementById('camBtn').textContent = videoEnabled ? 'Toggle My Camera' : 'Turn On My Camera';
+
+      // Notify ONLY the remote peer that our camera was toggled (does NOT hide remote peer's video on our screen!)
+      if (activeCallId) {
+        sendSignalingMessage({
+          type: 'PEER_CAMERA_TOGGLED',
+          callId: activeCallId,
+          senderName: currentSession ? currentSession.name : 'Peer',
+          cameraEnabled: videoEnabled
+        }, true);
+      }
     }
 
     function cleanupLocalMediaOnly() {
       stopRingingSound();
+      stopTwoWayFrameBridge();
       clearInterval(callTimer);
       callTimer = null;
+      hasNativeRemoteVideoTrack = false;
+      waitingToAnswerWhenOfferSdpReady = false;
       if (localStream) {
         localStream.getTracks().forEach(t => t.stop());
         localStream = null;
       }
       if (peerConnection) {
-        peerConnection.close();
+        try { peerConnection.close(); } catch (e) {}
         peerConnection = null;
       }
       const localVid = document.getElementById('localVideo');
+      const localPip = document.getElementById('localPipContainer');
       const remoteVid = document.getElementById('remoteVideo');
-      if (localVid) {
-        localVid.srcObject = null;
-        localVid.classList.add('hidden');
-      }
+      const remoteImg = document.getElementById('remoteFrameStream');
+      if (localVid) localVid.srcObject = null;
+      if (localPip) localPip.classList.add('hidden');
       if (remoteVid) {
         remoteVid.srcObject = null;
         remoteVid.classList.add('hidden');
+      }
+      if (remoteImg) {
+        remoteImg.removeAttribute('src');
+        remoteImg.classList.add('hidden');
       }
       document.getElementById('remotePeerOverlayTag').classList.add('hidden');
     }
