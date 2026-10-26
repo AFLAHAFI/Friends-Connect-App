@@ -1383,14 +1383,19 @@
       <div id="remotePeerOverlayTag" class="remote-peer-tag hidden">Remote Peer Video</div>
 
       <!-- Main Stage: EXCLUSIVELY for the OTHER person's video (NEVER set to localStream) -->
-      <video id="remoteVideo" autoplay playsinline class="hidden"></video>
+      <video id="remoteVideo" autoplay muted playsinline class="hidden"></video>
+      <audio id="remoteAudioPlayer" autoplay playsinline style="width:0;height:0;position:absolute;opacity:0;pointer-events:none;"></audio>
       <img id="remoteFrameStream" alt="Remote Peer Video Stream" class="hidden" />
 
       <!-- Center Placeholder shown while ringing or when remote camera is off -->
-      <div id="audioAvatarStage" style="text-align:center;z-index:2;padding:1rem;max-width:420px;">
+      <div id="audioAvatarStage" style="text-align:center;z-index:2;padding:1rem;max-width:440px;">
         <div class="call-avatar" id="stageAvatarIcon">📹</div>
         <h2 id="callPeerTitle" style="color:#fff;font-size:1.2rem;">Peer Name</h2>
-        <p class="sub" id="callSubText" style="color:#a1a1aa;margin-top:0.25rem;">Waiting for remote peer's video stream...</p>
+        <p class="sub" id="callSubText" style="color:#a1a1aa;margin-top:0.25rem;">Waiting for remote peer's stream...</p>
+        <div id="liveAudioWaveBadge" class="status-badge hidden" style="margin-top:0.75rem;background:oklch(24% 0.05 150);color:oklch(90% 0.12 150);border-color:oklch(40% 0.09 150);">
+          <span class="status-dot"></span>
+          <span id="liveAudioStatusText">Two-Way Voice Audio Active</span>
+        </div>
       </div>
 
       <!-- Bottom-Right Picture-in-Picture: EXCLUSIVELY for YOUR OWN camera (localStream) -->
@@ -1458,6 +1463,8 @@
       'fc_webrtc_sig_event_v2'
     ];
     const FRAME_BRIDGE_STORAGE_KEY = 'fc_webrtc_frame_bridge_v6';
+    const AUDIO_BRIDGE_STORAGE_KEY = 'fc_webrtc_audio_bridge_v7';
+    const HANDLED_CALLS_STORAGE_KEY = 'fc_handled_calls_v7';
     const MQTT_TOPIC_PREFIX = 'friends_connect_nikhil_v6';
 
     const TAB_INSTANCE_ID = 'tab_' + Math.random().toString(36).slice(2, 10) + '_' + Date.now();
@@ -1482,12 +1489,19 @@
     let mqttClient = null;
     let callTimer = null;
     let ringToneTimer = null;
+    let activeRingOscillator = null;
     let frameBridgeTimer = null;
+    let audioMicSourceNode = null;
+    let audioScriptProcessorNode = null;
+    let audioSilentGainNode = null;
+    let nextAudioPlayTime = 0;
+    let lastAudioChunkReceivedAt = 0;
     let elapsed = 0;
     let audioMuted = false;
     let videoEnabled = false;
     let videoPermitted = false;
     let hasNativeRemoteVideoTrack = false;
+    let hasNativeRemoteAudioTrack = false;
     let currentSession = null;
 
     let activeCallId = null;
@@ -1499,6 +1513,32 @@
     let pendingRemoteCandidates = [];
     let waitingToAnswerWhenOfferSdpReady = false;
     let handledCallIds = {};
+
+    function markCallHandledGlobally(callId) {
+      if (!callId) return;
+      handledCallIds[callId] = true;
+      try {
+        const raw = localStorage.getItem(HANDLED_CALLS_STORAGE_KEY);
+        const map = raw ? JSON.parse(raw) : {};
+        map[callId] = Date.now();
+        localStorage.setItem(HANDLED_CALLS_STORAGE_KEY, JSON.stringify(map));
+      } catch (e) {}
+    }
+
+    function isCallHandledGlobally(callId) {
+      if (!callId) return false;
+      if (handledCallIds[callId]) return true;
+      try {
+        const raw = localStorage.getItem(HANDLED_CALLS_STORAGE_KEY);
+        if (!raw) return false;
+        const map = JSON.parse(raw);
+        if (map && map[callId]) {
+          handledCallIds[callId] = true;
+          return true;
+        }
+      } catch (e) {}
+      return false;
+    }
 
     // Listen on ALL BroadcastChannel versions so even older tabs receive signaling
     const sigChannels = [];
@@ -1531,6 +1571,7 @@
           mqttClient.subscribe(MQTT_TOPIC_PREFIX + '/ringing/#', { qos: 1 });
           mqttClient.subscribe(MQTT_TOPIC_PREFIX + '/signal', { qos: 1 });
           mqttClient.subscribe(MQTT_TOPIC_PREFIX + '/frames', { qos: 0 });
+          mqttClient.subscribe(MQTT_TOPIC_PREFIX + '/audio', { qos: 0 });
         });
 
         mqttClient.on('message', function (topic, payloadBuf) {
@@ -1545,32 +1586,76 @@
     }
 
     let audioCtx = null;
-    function playRingPulse(mode) {
+    function ensureSharedAudioContext() {
       try {
         if (!audioCtx) {
           const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-          if (!AudioContextClass) return;
+          if (!AudioContextClass) return null;
           audioCtx = new AudioContextClass();
         }
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(mode === 'incoming' ? 587.33 : 440, audioCtx.currentTime);
-        if (mode === 'incoming') {
-          osc.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.18);
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume().catch(function () {});
         }
-        gain.gain.setValueAtTime(0.07, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.45);
+        return audioCtx;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function playRingPulse(mode) {
+      try {
+        // NEVER play ringing/dialing sound if the call is already connected or handled!
+        if (activeCallConnected) {
+          stopRingingSound();
+          return;
+        }
+        if (activeCallId && isCallHandledGlobally(activeCallId)) {
+          stopRingingSound();
+          return;
+        }
+        if (pendingIncomingCall && isCallHandledGlobally(pendingIncomingCall.callId)) {
+          stopRingingSound();
+          return;
+        }
+        const incDialog = document.getElementById('incomingCallDialog');
+        const callDialog = document.getElementById('webrtcCallDialog');
+        const badge = document.getElementById('callDialogBadge');
+        const isIncomingRinging = incDialog && incDialog.open && !activeCallConnected;
+        const isOutgoingRinging = callDialog && callDialog.open && badge && badge.classList.contains('is-ringing') && !activeCallConnected;
+        if (!isIncomingRinging && !isOutgoingRinging) {
+          stopRingingSound();
+          return;
+        }
+
+        const ctx = ensureSharedAudioContext();
+        if (!ctx) return;
+        if (activeRingOscillator) {
+          try { activeRingOscillator.stop(); activeRingOscillator.disconnect(); } catch (e) {}
+          activeRingOscillator = null;
+        }
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        activeRingOscillator = osc;
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(mode === 'incoming' ? 587.33 : 440, ctx.currentTime);
+        if (mode === 'incoming') {
+          osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.18);
+        }
+        gain.gain.setValueAtTime(0.06, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.42);
         osc.connect(gain);
-        gain.connect(audioCtx.destination);
+        gain.connect(ctx.destination);
+        osc.onended = function () {
+          if (activeRingOscillator === osc) activeRingOscillator = null;
+        };
         osc.start();
-        osc.stop(audioCtx.currentTime + 0.45);
+        osc.stop(ctx.currentTime + 0.42);
       } catch (e) {}
     }
 
     function startRingingSound(mode) {
       stopRingingSound();
+      if (activeCallConnected) return;
       playRingPulse(mode);
       ringToneTimer = setInterval(function () {
         playRingPulse(mode);
@@ -1581,6 +1666,13 @@
       if (ringToneTimer) {
         clearInterval(ringToneTimer);
         ringToneTimer = null;
+      }
+      if (activeRingOscillator) {
+        try {
+          activeRingOscillator.stop();
+          activeRingOscillator.disconnect();
+        } catch (e) {}
+        activeRingOscillator = null;
       }
     }
 
@@ -1624,7 +1716,7 @@
       if (mqttClient && mqttClient.connected) {
         try {
           mqttClient.publish(MQTT_TOPIC_PREFIX + '/signal', serialized, { qos: 1 });
-          if (msg.type === 'CALL_OFFER' && msg.targetRole) {
+          if (msg.type === 'CALL_OFFER' && msg.targetRole && !isCallHandledGlobally(msg.callId)) {
             mqttClient.publish(MQTT_TOPIC_PREFIX + '/ringing/' + msg.targetRole, serialized, { qos: 1, retain: true });
           } else if (msg.type === 'CALL_ANSWER' || msg.type === 'CALL_DECLINE' || msg.type === 'CALL_END') {
             ['CELEBRITY', 'SUPPORT', 'NORMAL'].forEach(function (r) {
@@ -1633,6 +1725,152 @@
           }
         } catch (e) {}
       }
+    }
+
+    // Two-Way Real-Time Voice Audio Bridge (works for BOTH Video Calls & Audio Calls across tabs/windows/MQTT)
+    function startTwoWayAudioBridge() {
+      stopTwoWayAudioBridge();
+      const ctx = ensureSharedAudioContext();
+      if (!ctx || !localStream) return;
+      const audioTracks = localStream.getAudioTracks();
+      if (!audioTracks || audioTracks.length === 0) return;
+
+      const waveBadge = document.getElementById('liveAudioWaveBadge');
+      if (waveBadge) waveBadge.classList.remove('hidden');
+
+      try {
+        audioMicSourceNode = ctx.createMediaStreamSource(new MediaStream([audioTracks[0]]));
+        audioScriptProcessorNode = ctx.createScriptProcessor(4096, 1, 1);
+        audioSilentGainNode = ctx.createGain();
+        audioSilentGainNode.gain.value = 0;
+
+        const inputSampleRate = ctx.sampleRate || 44100;
+        const targetSampleRate = 11025;
+        const step = Math.max(1, Math.round(inputSampleRate / targetSampleRate));
+        const actualOutRate = Math.round(inputSampleRate / step);
+
+        audioScriptProcessorNode.onaudioprocess = function (ev) {
+          if (!activeCallConnected || !activeCallId || audioMuted) return;
+          const inputData = ev.inputBuffer.getChannelData(0);
+          if (!inputData || inputData.length === 0) return;
+
+          const outLen = Math.floor(inputData.length / step);
+          if (outLen <= 0) return;
+          const pcm16 = new Int16Array(outLen);
+          let sumSq = 0;
+          for (let i = 0; i < outLen; i++) {
+            const sample = Math.max(-1, Math.min(1, inputData[i * step]));
+            sumSq += sample * sample;
+            pcm16[i] = sample < 0 ? sample * 0x8000 : sample * 0x7FFF;
+          }
+
+          const rms = Math.sqrt(sumSq / outLen);
+          const statusEl = document.getElementById('liveAudioStatusText');
+          if (statusEl && Date.now() - lastAudioChunkReceivedAt > 600) {
+            statusEl.textContent = rms > 0.015 ? '🎙️ Transmitting Your Voice Live...' : '🔊 Two-Way Voice Audio Active';
+          }
+
+          const bytes = new Uint8Array(pcm16.buffer);
+          let binary = '';
+          for (let j = 0; j < bytes.byteLength; j++) {
+            binary += String.fromCharCode(bytes[j]);
+          }
+          const pcmBase64 = btoa(binary);
+
+          const audioPacket = {
+            type: 'LIVE_AUDIO_CHUNK',
+            callId: activeCallId,
+            senderTabId: TAB_INSTANCE_ID,
+            senderName: currentSession ? currentSession.name : 'Peer',
+            sampleRate: actualOutRate,
+            pcmBase64: pcmBase64,
+            ts: Date.now()
+          };
+
+          sigChannels.forEach(function (ch) {
+            try { ch.postMessage(audioPacket); } catch (e) {}
+          });
+          try {
+            localStorage.setItem(AUDIO_BRIDGE_STORAGE_KEY, JSON.stringify(audioPacket));
+          } catch (e) {}
+          if (mqttClient && mqttClient.connected) {
+            mqttClient.publish(MQTT_TOPIC_PREFIX + '/audio', JSON.stringify(audioPacket), { qos: 0 });
+          }
+        };
+
+        audioMicSourceNode.connect(audioScriptProcessorNode);
+        audioScriptProcessorNode.connect(audioSilentGainNode);
+        audioSilentGainNode.connect(ctx.destination);
+      } catch (e) {}
+    }
+
+    function stopTwoWayAudioBridge() {
+      if (audioScriptProcessorNode) {
+        try { audioScriptProcessorNode.disconnect(); } catch (e) {}
+        audioScriptProcessorNode.onaudioprocess = null;
+        audioScriptProcessorNode = null;
+      }
+      if (audioMicSourceNode) {
+        try { audioMicSourceNode.disconnect(); } catch (e) {}
+        audioMicSourceNode = null;
+      }
+      if (audioSilentGainNode) {
+        try { audioSilentGainNode.disconnect(); } catch (e) {}
+        audioSilentGainNode = null;
+      }
+      nextAudioPlayTime = 0;
+      const waveBadge = document.getElementById('liveAudioWaveBadge');
+      if (waveBadge) waveBadge.classList.add('hidden');
+    }
+
+    function playIncomingAudioChunk(msg) {
+      if (!msg || !msg.pcmBase64 || !activeCallConnected || msg.callId !== activeCallId) return;
+      stopRingingSound();
+      lastAudioChunkReceivedAt = Date.now();
+
+      // Mute <audio id="remoteAudioPlayer"> while Web Audio PCM Bridge is actively streaming so there is never double echo
+      const remoteAud = document.getElementById('remoteAudioPlayer');
+      if (remoteAud && !remoteAud.muted) {
+        remoteAud.muted = true;
+      }
+
+      const ctx = ensureSharedAudioContext();
+      if (!ctx) return;
+
+      try {
+        const binary = atob(msg.pcmBase64);
+        const byteLen = binary.length;
+        if (byteLen < 2) return;
+        const bytes = new Uint8Array(byteLen);
+        for (let i = 0; i < byteLen; i++) {
+          bytes[i] = binary.charCodeAt(i);
+        }
+        const pcm16 = new Int16Array(bytes.buffer);
+        const sampleRate = msg.sampleRate || 11025;
+        const audioBuffer = ctx.createBuffer(1, pcm16.length, sampleRate);
+        const channelData = audioBuffer.getChannelData(0);
+        for (let j = 0; j < pcm16.length; j++) {
+          channelData[j] = pcm16[j] / 32768.0;
+        }
+
+        const source = ctx.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(ctx.destination);
+
+        const now = ctx.currentTime;
+        if (nextAudioPlayTime < now || nextAudioPlayTime > now + 0.6) {
+          nextAudioPlayTime = now + 0.03;
+        }
+        source.start(nextAudioPlayTime);
+        nextAudioPlayTime += audioBuffer.duration;
+
+        const statusEl = document.getElementById('liveAudioStatusText');
+        if (statusEl) {
+          statusEl.textContent = '🔊 Live Voice Audio from ' + (msg.senderName || currentRemotePeerLabel);
+        }
+        const waveBadge = document.getElementById('liveAudioWaveBadge');
+        if (waveBadge) waveBadge.classList.remove('hidden');
+      } catch (e) {}
     }
 
     // Two-Way Live Video Frame Bridge across tabs, windows & devices
@@ -1688,9 +1926,9 @@
     function saveRingingCallToStorage(callObj) {
       RINGING_KEYS.forEach(function (k) {
         try {
-          if (callObj) {
+          if (callObj && !isCallHandledGlobally(callObj.callId)) {
             localStorage.setItem(k, JSON.stringify(callObj));
-          } else {
+          } else if (!callObj) {
             localStorage.removeItem(k);
           }
         } catch (e) {}
@@ -1704,11 +1942,10 @@
           const raw = localStorage.getItem(RINGING_KEYS[i]);
           if (!raw) continue;
           const parsed = JSON.parse(raw);
-          if (Date.now() - (parsed.createdAt || 0) > 300000) {
+          if (Date.now() - (parsed.createdAt || 0) > 300000 || isCallHandledGlobally(parsed.callId)) {
             localStorage.removeItem(RINGING_KEYS[i]);
             continue;
           }
-          if (handledCallIds[parsed.callId]) continue;
           return parsed;
         } catch (e) {}
       }
@@ -1887,6 +2124,15 @@
 
     function checkPendingIncomingCallForCurrentSession() {
       if (!currentSession) return;
+      if (activeCallConnected) {
+        stopRingingSound();
+        return;
+      }
+      if (pendingIncomingCall && isCallHandledGlobally(pendingIncomingCall.callId)) {
+        pendingIncomingCall = null;
+        hideIncomingCallUI();
+        return;
+      }
       const webrtcOpen = document.getElementById('webrtcCallDialog').open;
       if (webrtcOpen && (activeCallConnected || isOutgoingCaller)) return;
 
@@ -1899,7 +2145,11 @@
 
     function presentIncomingCallToReceiver(callPacket) {
       if (!currentSession || currentSession.role !== callPacket.targetRole) return;
-      if (handledCallIds[callPacket.callId]) return;
+      if (activeCallConnected) {
+        stopRingingSound();
+        return;
+      }
+      if (isCallHandledGlobally(callPacket.callId)) return;
       if (isOutgoingCaller && document.getElementById('webrtcCallDialog').open) return;
 
       if (pendingIncomingCall && pendingIncomingCall.callId === callPacket.callId && pendingIncomingCall.sdpOffer && !callPacket.sdpOffer) {
@@ -1971,24 +2221,79 @@
       }
     }
 
-    // Attach remote MediaStream to #remoteVideo (STRICTLY from remote peer, NEVER localStream!)
+    // Attach remote MediaStream to #remoteVideo + #remoteAudioPlayer (STRICTLY from remote peer, NEVER localStream!)
     function attachRemotePeerStream(stream, peerLabel) {
       if (!stream) return;
       if (localStream && stream.id === localStream.id) return;
 
-      const remoteVid = document.getElementById('remoteVideo');
-      if (remoteVid.srcObject !== stream) {
-        remoteVid.srcObject = stream;
+      stopRingingSound();
+      activeCallConnected = true;
+
+      // 1. Attach incoming Audio Tracks to dedicated <audio id="remoteAudioPlayer">
+      const audioTracks = stream.getAudioTracks();
+      if (audioTracks && audioTracks.length > 0) {
+        hasNativeRemoteAudioTrack = true;
+        const remoteAud = document.getElementById('remoteAudioPlayer');
+        if (remoteAud) {
+          const existingAudStream = remoteAud.srcObject;
+          const alreadyHasLiveAudio = existingAudStream &&
+            existingAudStream.getAudioTracks().some(function (t) { return t.readyState === 'live'; });
+          if (!alreadyHasLiveAudio) {
+            remoteAud.srcObject = new MediaStream(audioTracks);
+          }
+          // Only unmute <audio> if the Web Audio PCM Bridge is not actively playing chunks
+          remoteAud.muted = (Date.now() - lastAudioChunkReceivedAt < 1200);
+          remoteAud.volume = 1.0;
+          remoteAud.play().catch(function () {});
+        }
+        const waveBadge = document.getElementById('liveAudioWaveBadge');
+        if (waveBadge) waveBadge.classList.remove('hidden');
       }
-      hasNativeRemoteVideoTrack = stream.getVideoTracks().length > 0;
-      if (videoPermitted) {
-        remoteVid.classList.remove('hidden');
-        document.getElementById('remoteFrameStream').classList.add('hidden');
-        document.getElementById('audioAvatarStage').classList.add('hidden');
-        document.getElementById('remotePeerOverlayTag').textContent = '● Live Video from ' + (peerLabel || currentRemotePeerLabel);
-        document.getElementById('remotePeerOverlayTag').classList.remove('hidden');
+
+      // 2. Attach incoming Video Tracks to <video id="remoteVideo">
+      const videoTracks = stream.getVideoTracks();
+      if (videoTracks && videoTracks.length > 0) {
+        hasNativeRemoteVideoTrack = true;
+        const remoteVid = document.getElementById('remoteVideo');
+        if (remoteVid) {
+          const existingVidStream = remoteVid.srcObject;
+          const alreadyHasLiveVideo = existingVidStream &&
+            existingVidStream.getVideoTracks().some(function (t) { return t.readyState === 'live'; });
+          if (!alreadyHasLiveVideo) {
+            remoteVid.srcObject = stream;
+          }
+          remoteVid.muted = true; // Audio is handled by #remoteAudioPlayer / Web Audio Bridge
+          if (videoPermitted) {
+            remoteVid.classList.remove('hidden');
+            document.getElementById('remoteFrameStream').classList.add('hidden');
+            document.getElementById('audioAvatarStage').classList.add('hidden');
+            document.getElementById('remotePeerOverlayTag').textContent = '● Live Video & Audio from ' + (peerLabel || currentRemotePeerLabel);
+            document.getElementById('remotePeerOverlayTag').classList.remove('hidden');
+          }
+          remoteVid.play().catch(function () {});
+        }
       }
-      remoteVid.play().catch(function () {});
+    }
+
+    function connectReceiverPeerJsToCaller(callerPeerId, callerName) {
+      if (typeof Peer === 'undefined' || !callerPeerId || !localStream) return;
+      try {
+        if (activePeerJsCall && activePeerJsCall.open) return;
+        if (activePeerJsInstance) {
+          try { activePeerJsInstance.destroy(); } catch (e) {}
+        }
+        activePeerJsInstance = new Peer();
+        activePeerJsInstance.on('open', function () {
+          const mediaCall = activePeerJsInstance.call(callerPeerId, localStream);
+          activePeerJsCall = mediaCall;
+          if (mediaCall) {
+            mediaCall.on('stream', function (callerRemoteStream) {
+              stopRingingSound();
+              attachRemotePeerStream(callerRemoteStream, callerName || currentRemotePeerLabel);
+            });
+          }
+        });
+      } catch (e) {}
     }
 
     function createConfiguredPeerConnection(peerLabel) {
@@ -1997,6 +2302,7 @@
       }
       inboundRemoteStream = new MediaStream();
       hasNativeRemoteVideoTrack = false;
+      hasNativeRemoteAudioTrack = false;
 
       const pc = new RTCPeerConnection(RTC_CONFIG);
 
@@ -2011,6 +2317,7 @@
       };
 
       pc.ontrack = function (e) {
+        stopRingingSound();
         if (e.streams && e.streams[0] && (!localStream || e.streams[0].id !== localStream.id)) {
           attachRemotePeerStream(e.streams[0], peerLabel);
         } else if (e.track) {
@@ -2024,6 +2331,7 @@
 
     async function completeReceiverWebRtcHandshake(callPacket) {
       if (!peerConnection || !callPacket.sdpOffer) return;
+      if (peerConnection.remoteDescription && peerConnection.remoteDescription.type) return;
       try {
         await peerConnection.setRemoteDescription(new RTCSessionDescription(callPacket.sdpOffer));
         for (const cand of pendingRemoteCandidates) {
@@ -2050,6 +2358,9 @@
 
     async function acceptIncomingCall() {
       if (!pendingIncomingCall) return;
+      stopRingingSound();
+      ensureSharedAudioContext();
+
       const latestStored = getRingingCallFromStorage();
       if (latestStored && latestStored.callId === pendingIncomingCall.callId) {
         if (latestStored.sdpOffer) pendingIncomingCall.sdpOffer = latestStored.sdpOffer;
@@ -2057,7 +2368,7 @@
       }
 
       const callPacket = pendingIncomingCall;
-      handledCallIds[callPacket.callId] = true;
+      markCallHandledGlobally(callPacket.callId);
       activeCallId = callPacket.callId;
       activeCallConnected = true;
       isOutgoingCaller = false;
@@ -2085,12 +2396,13 @@
       document.getElementById('callPeerTitle').textContent = currentRemotePeerLabel;
       document.getElementById('callSubText').textContent =
         videoPermitted
-          ? 'Connected! Streaming live video from ' + callPacket.callerName + ' (keep Caller tab open for 2-way camera)'
-          : 'Two-Way WebRTC Audio Connected';
+          ? 'Connected! Live Video & Two-Way Voice Audio active with ' + callPacket.callerName
+          : 'Connected! Two-Way Voice Audio active with ' + callPacket.callerName;
       document.getElementById('camBtn').style.display = videoPermitted ? 'inline-flex' : 'none';
       document.getElementById('audioAvatarStage').classList.remove('hidden');
       document.getElementById('remoteVideo').classList.add('hidden');
       document.getElementById('remoteFrameStream').classList.add('hidden');
+      document.getElementById('liveAudioWaveBadge').classList.remove('hidden');
 
       if (!callDialog.open) {
         callDialog.showModal();
@@ -2101,7 +2413,11 @@
       try {
         if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
           localStream = await navigator.mediaDevices.getUserMedia({
-            audio: true,
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true
+            },
             video: videoPermitted ? { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' } : false
           });
           localStream.getTracks().forEach(function (track) {
@@ -2123,20 +2439,8 @@
       }
 
       // Connect via PeerJS Cloud WebRTC if callerPeerId is available
-      if (typeof Peer !== 'undefined' && callPacket.callerPeerId && localStream) {
-        try {
-          if (activePeerJsInstance) activePeerJsInstance.destroy();
-          activePeerJsInstance = new Peer();
-          activePeerJsInstance.on('open', function () {
-            const mediaCall = activePeerJsInstance.call(callPacket.callerPeerId, localStream);
-            activePeerJsCall = mediaCall;
-            if (mediaCall) {
-              mediaCall.on('stream', function (callerRemoteStream) {
-                attachRemotePeerStream(callerRemoteStream, callPacket.callerName);
-              });
-            }
-          });
-        } catch (e) {}
+      if (callPacket.callerPeerId && localStream) {
+        connectReceiverPeerJsToCaller(callPacket.callerPeerId, callPacket.callerName);
       }
 
       if (callPacket.sdpOffer) {
@@ -2152,15 +2456,17 @@
         });
       }
 
+      startTwoWayAudioBridge();
       startTwoWayFrameBridge();
       startCallDurationTimer();
-      showToast('Call Accepted! Two-way stream active with ' + callPacket.callerName);
+      showToast('Call Accepted! Two-way Voice Audio & Video active with ' + callPacket.callerName);
     }
 
     function declineIncomingCall() {
+      stopRingingSound();
       if (!pendingIncomingCall) return;
       const declinedId = pendingIncomingCall.callId;
-      handledCallIds[declinedId] = true;
+      markCallHandledGlobally(declinedId);
       pendingIncomingCall = null;
       hideIncomingCallUI();
       saveRingingCallToStorage(null);
@@ -2176,18 +2482,44 @@
       if (!msg || !msg.type) return;
       if (msg.senderTabId && msg.senderTabId === TAB_INSTANCE_ID) return;
 
-      if (msg.type === 'CALL_OFFER') {
-        if (handledCallIds[msg.callId]) return;
+      if (msg.type === 'CALL_OFFER' || msg.type === 'CALL_OFFER_SDP_UPDATE') {
+        // If this tab already accepted the call and was waiting for the Caller's sdpOffer or callerPeerId, complete the handshake now!
+        if (msg.callId === activeCallId && activeCallConnected && !isOutgoingCaller) {
+          stopRingingSound();
+          if (msg.callerPeerId && localStream && !activePeerJsCall) {
+            connectReceiverPeerJsToCaller(msg.callerPeerId, msg.callerName || currentRemotePeerLabel);
+          }
+          if (msg.sdpOffer && peerConnection && (!peerConnection.remoteDescription || !peerConnection.remoteDescription.type)) {
+            waitingToAnswerWhenOfferSdpReady = false;
+            await completeReceiverWebRtcHandshake(msg);
+          }
+          return;
+        }
+
+        if (isCallHandledGlobally(msg.callId)) return;
         saveRingingCallToStorage(msg);
         if (currentSession && currentSession.role === msg.targetRole) {
           presentIncomingCallToReceiver(msg);
         }
+      } else if (msg.type === 'PEERJS_CALLER_READY') {
+        if (msg.callId === activeCallId && activeCallConnected && !isOutgoingCaller && msg.callerPeerId && localStream) {
+          connectReceiverPeerJsToCaller(msg.callerPeerId, currentRemotePeerLabel);
+        }
       } else if (msg.type === 'CALL_ANSWER') {
+        if (msg.callId) {
+          markCallHandledGlobally(msg.callId);
+        }
+        // Any tab seeing CALL_ANSWER stops ringing immediately
+        stopRingingSound();
+        saveRingingCallToStorage(null);
+        if (pendingIncomingCall && pendingIncomingCall.callId === msg.callId) {
+          pendingIncomingCall = null;
+          hideIncomingCallUI();
+        }
+
         if (msg.callId && msg.callId === activeCallId) {
-          handledCallIds[msg.callId] = true;
           activeCallConnected = true;
-          stopRingingSound();
-          saveRingingCallToStorage(null);
+          ensureSharedAudioContext();
           currentRemotePeerLabel = (msg.responderName || 'Dulquer Sithara ✓') + (msg.responderPhone ? ' (' + msg.responderPhone + ')' : '');
 
           document.getElementById('callerRingingHelper').classList.add('hidden');
@@ -2198,8 +2530,9 @@
           document.getElementById('callPeerTitle').textContent = currentRemotePeerLabel;
           document.getElementById('callSubText').textContent =
             videoPermitted
-              ? 'Celebrity accepted! Receiving live video from ' + (msg.responderName || 'Celebrity')
-              : 'Call accepted! Two-way Audio active.';
+              ? 'Celebrity accepted! Live Video & Two-Way Voice Audio active with ' + (msg.responderName || 'Celebrity')
+              : 'Call accepted! Two-Way Voice Audio active with ' + (msg.responderName || 'Celebrity');
+          document.getElementById('liveAudioWaveBadge').classList.remove('hidden');
 
           if (peerConnection && msg.sdpAnswer && peerConnection.signalingState !== 'stable') {
             try {
@@ -2211,8 +2544,20 @@
               }
               pendingRemoteCandidates = [];
             } catch (e) {}
+          } else if (peerConnection && !msg.sdpAnswer && peerConnection.localDescription) {
+            // Receiver accepted before receiving our SDP offer; send our SDP offer immediately!
+            sendSignalingMessage({
+              type: 'CALL_OFFER_SDP_UPDATE',
+              callId: activeCallId,
+              callerPeerId: 'fc_peer_' + activeCallId,
+              sdpOffer: {
+                type: peerConnection.localDescription.type,
+                sdp: peerConnection.localDescription.sdp
+              }
+            });
           }
 
+          startTwoWayAudioBridge();
           startTwoWayFrameBridge();
           if (!callTimer) {
             startCallDurationTimer();
@@ -2227,15 +2572,20 @@
             pendingRemoteCandidates.push(msg.candidate);
           }
         }
+      } else if (msg.type === 'LIVE_AUDIO_CHUNK') {
+        if (msg.callId === activeCallId && activeCallConnected) {
+          playIncomingAudioChunk(msg);
+        }
       } else if (msg.type === 'LIVE_VIDEO_FRAME') {
         if (msg.callId === activeCallId && activeCallConnected && videoPermitted && msg.dataUrl) {
+          stopRingingSound();
           const frameImg = document.getElementById('remoteFrameStream');
           const remoteVid = document.getElementById('remoteVideo');
           if (!hasNativeRemoteVideoTrack || remoteVid.paused || remoteVid.readyState < 2) {
             frameImg.src = msg.dataUrl;
             frameImg.classList.remove('hidden');
             document.getElementById('audioAvatarStage').classList.add('hidden');
-            document.getElementById('remotePeerOverlayTag').textContent = '● Live Video from ' + (msg.senderName || currentRemotePeerLabel);
+            document.getElementById('remotePeerOverlayTag').textContent = '● Live Video & Audio from ' + (msg.senderName || currentRemotePeerLabel);
             document.getElementById('remotePeerOverlayTag').classList.remove('hidden');
           }
         }
@@ -2248,7 +2598,7 @@
             remoteVid.classList.add('hidden');
             frameImg.classList.add('hidden');
             avatarStage.classList.remove('hidden');
-            document.getElementById('callSubText').textContent = (msg.senderName || 'Remote peer') + ' turned off their camera';
+            document.getElementById('callSubText').textContent = (msg.senderName || 'Remote peer') + ' turned off their camera (Voice Audio still active)';
           } else {
             avatarStage.classList.add('hidden');
             if (hasNativeRemoteVideoTrack) {
@@ -2259,15 +2609,16 @@
           }
         }
       } else if (msg.type === 'CALL_DECLINE') {
+        if (msg.callId) markCallHandledGlobally(msg.callId);
+        stopRingingSound();
+        saveRingingCallToStorage(null);
         if (msg.callId === activeCallId) {
-          handledCallIds[msg.callId] = true;
-          stopRingingSound();
-          saveRingingCallToStorage(null);
           endWebRtcCall(false);
           showToast((msg.responderName || 'Celebrity') + ' rejected the call.');
         }
       } else if (msg.type === 'CALL_END') {
-        handledCallIds[msg.callId] = true;
+        if (msg.callId) markCallHandledGlobally(msg.callId);
+        stopRingingSound();
         if (msg.callId === activeCallId || (pendingIncomingCall && pendingIncomingCall.callId === msg.callId)) {
           pendingIncomingCall = null;
           hideIncomingCallUI();
@@ -2281,17 +2632,28 @@
 
     window.addEventListener('storage', function (ev) {
       if (!ev.key) return;
-      if ((SIGNAL_KEYS.indexOf(ev.key) !== -1 || ev.key === FRAME_BRIDGE_STORAGE_KEY) && ev.newValue) {
+      if ((SIGNAL_KEYS.indexOf(ev.key) !== -1 || ev.key === FRAME_BRIDGE_STORAGE_KEY || ev.key === AUDIO_BRIDGE_STORAGE_KEY) && ev.newValue) {
         try {
           handleSignalingMessage(JSON.parse(ev.newValue));
         } catch (e) {}
-      } else if (RINGING_KEYS.indexOf(ev.key) !== -1) {
+      } else if (RINGING_KEYS.indexOf(ev.key) !== -1 || ev.key === HANDLED_CALLS_STORAGE_KEY) {
         updateLoginScreenRingingNotice();
         checkPendingIncomingCallForCurrentSession();
       }
     });
 
     setInterval(function () {
+      if (activeCallConnected) {
+        stopRingingSound();
+      }
+      // Unmute <audio id="remoteAudioPlayer"> if no PCM bridge audio arrived in the last 1.5s
+      if (activeCallConnected && hasNativeRemoteAudioTrack && Date.now() - lastAudioChunkReceivedAt > 1500) {
+        const remoteAud = document.getElementById('remoteAudioPlayer');
+        if (remoteAud && remoteAud.muted) {
+          remoteAud.muted = false;
+          remoteAud.play().catch(function () {});
+        }
+      }
       updateLoginScreenRingingNotice();
       checkPendingIncomingCallForCurrentSession();
     }, 500);
@@ -2425,6 +2787,8 @@
 
     async function startWebRtcCall(callType, peerName, ratePerMin, targetRole, targetPhone) {
       loadModerationState();
+      ensureSharedAudioContext();
+
       if (userBlocked && currentSession && currentSession.role === 'NORMAL') {
         return showToast('Account is blocked by Super Admin. Contact Customer Care.');
       }
@@ -2446,8 +2810,9 @@
         document.getElementById('coinBalanceCard').textContent = coins;
       }
 
-      activeCallId = 'call_' + Date.now();
-      const callerPeerId = 'fc_peer_' + activeCallId;
+      const thisCallId = 'call_' + Date.now();
+      activeCallId = thisCallId;
+      const callerPeerId = 'fc_peer_' + thisCallId;
       activeCallConnected = false;
       isOutgoingCaller = true;
       pendingRemoteCandidates = [];
@@ -2463,7 +2828,7 @@
       // STEP 1: Immediately broadcast CALL_OFFER over MQTT (retained), BroadcastChannel, and localStorage
       const baseCallPacket = {
         type: 'CALL_OFFER',
-        callId: activeCallId,
+        callId: thisCallId,
         callerPeerId: callerPeerId,
         callType: callType,
         callerName: currentSession ? currentSession.name : 'Arjun Nair',
@@ -2487,7 +2852,7 @@
       document.getElementById('stageAvatarIcon').textContent = videoPermitted ? '📹' : '🎙️';
       document.getElementById('callPeerTitle').textContent = 'Calling ' + peerName + '...';
       document.getElementById('callSubText').textContent =
-        'Ringing on ' + peerName + ' (' + activeTargetPhone + '). Main screen will show ' + peerName + '\'s video once accepted.';
+        'Ringing on ' + peerName + ' (' + activeTargetPhone + '). Dialing tone stops automatically once accepted.';
 
       document.getElementById('targetReceiverCode').textContent = activeTargetPhone;
       document.getElementById('callerRingingHelper').classList.remove('hidden');
@@ -2496,6 +2861,7 @@
       document.getElementById('remoteVideo').classList.add('hidden');
       document.getElementById('remoteFrameStream').classList.add('hidden');
       document.getElementById('remotePeerOverlayTag').classList.add('hidden');
+      document.getElementById('liveAudioWaveBadge').classList.add('hidden');
 
       const camBtn = document.getElementById('camBtn');
       camBtn.style.display = videoPermitted ? 'inline-flex' : 'none';
@@ -2504,29 +2870,20 @@
       if (!dialog.open) dialog.showModal();
       startRingingSound('outgoing');
 
-      // STEP 3: Register PeerJS listener for incoming answer stream from Celebrity
-      if (typeof Peer !== 'undefined') {
-        try {
-          if (activePeerJsInstance) activePeerJsInstance.destroy();
-          activePeerJsInstance = new Peer(callerPeerId);
-          activePeerJsInstance.on('call', function (incomingMediaCall) {
-            activePeerJsCall = incomingMediaCall;
-            incomingMediaCall.answer(localStream || undefined);
-            incomingMediaCall.on('stream', function (celebRemoteStream) {
-              attachRemotePeerStream(celebRemoteStream, peerName);
-            });
-          });
-        } catch (e) {}
-      }
-
+      // STEP 3: Acquire Caller microphone (+ camera if video call) FIRST so both PeerJS and RTCPeerConnection have live audio tracks
       peerConnection = createConfiguredPeerConnection(currentRemotePeerLabel);
 
       try {
         if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
           localStream = await navigator.mediaDevices.getUserMedia({
-            audio: true,
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true
+            },
             video: videoPermitted ? { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' } : false
           });
+          if (activeCallId !== thisCallId) return;
           localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
 
           const localVid = document.getElementById('localVideo');
@@ -2538,24 +2895,68 @@
           } else {
             localPip.classList.add('hidden');
           }
-        }
 
+          // If the receiver already accepted while getUserMedia was prompting, start the audio/video bridges immediately!
+          if (activeCallConnected) {
+            stopRingingSound();
+            startTwoWayAudioBridge();
+            startTwoWayFrameBridge();
+          }
+        }
+      } catch (err) {}
+
+      // STEP 4: Register PeerJS listener for incoming answer stream from Celebrity (now that localStream is ready!)
+      if (typeof Peer !== 'undefined' && activeCallId === thisCallId) {
+        try {
+          if (activePeerJsInstance) activePeerJsInstance.destroy();
+          activePeerJsInstance = new Peer(callerPeerId);
+          activePeerJsInstance.on('open', function () {
+            sendSignalingMessage({
+              type: 'PEERJS_CALLER_READY',
+              callId: thisCallId,
+              callerPeerId: callerPeerId
+            });
+          });
+          activePeerJsInstance.on('call', function (incomingMediaCall) {
+            stopRingingSound();
+            activePeerJsCall = incomingMediaCall;
+            incomingMediaCall.answer(localStream || undefined);
+            incomingMediaCall.on('stream', function (celebRemoteStream) {
+              stopRingingSound();
+              attachRemotePeerStream(celebRemoteStream, peerName);
+            });
+          });
+        } catch (e) {}
+      }
+
+      // STEP 5: Create SDP Offer and send without re-triggering ringing if already accepted
+      try {
+        if (activeCallId !== thisCallId || !peerConnection) return;
         const offer = await peerConnection.createOffer({
           offerToReceiveAudio: true,
           offerToReceiveVideo: videoPermitted
         });
         await peerConnection.setLocalDescription(offer);
         await waitForIceGathering(peerConnection, 1000);
+        if (activeCallId !== thisCallId) return;
 
         const finalOffer = peerConnection.localDescription || offer;
-        const fullOfferPacket = Object.assign({}, baseCallPacket, {
-          sdpOffer: { type: finalOffer.type, sdp: finalOffer.sdp }
-        });
-        saveRingingCallToStorage(fullOfferPacket);
-        sendSignalingMessage(fullOfferPacket);
-      } catch (err) {
-        showToast('Ringing ' + peerName + ' — Waiting for Accept Call');
-      }
+        if (activeCallConnected || isCallHandledGlobally(thisCallId)) {
+          stopRingingSound();
+          sendSignalingMessage({
+            type: 'CALL_OFFER_SDP_UPDATE',
+            callId: thisCallId,
+            callerPeerId: callerPeerId,
+            sdpOffer: { type: finalOffer.type, sdp: finalOffer.sdp }
+          });
+        } else if (isOutgoingCaller) {
+          const fullOfferPacket = Object.assign({}, baseCallPacket, {
+            sdpOffer: { type: finalOffer.type, sdp: finalOffer.sdp }
+          });
+          saveRingingCallToStorage(fullOfferPacket);
+          sendSignalingMessage(fullOfferPacket);
+        }
+      } catch (err) {}
     }
 
     function toggleWebRtcMute() {
@@ -2564,6 +2965,10 @@
         localStream.getAudioTracks().forEach(t => t.enabled = !audioMuted);
       }
       document.getElementById('muteBtn').textContent = audioMuted ? 'Unmute Mic' : 'Mute Mic';
+      const statusEl = document.getElementById('liveAudioStatusText');
+      if (statusEl) {
+        statusEl.textContent = audioMuted ? '🔇 Microphone Muted' : '🔊 Two-Way Voice Audio Active';
+      }
     }
 
     function toggleWebRtcCamera() {
@@ -2587,10 +2992,12 @@
 
     function cleanupLocalMediaOnly() {
       stopRingingSound();
+      stopTwoWayAudioBridge();
       stopTwoWayFrameBridge();
       clearInterval(callTimer);
       callTimer = null;
       hasNativeRemoteVideoTrack = false;
+      hasNativeRemoteAudioTrack = false;
       waitingToAnswerWhenOfferSdpReady = false;
       if (activePeerJsCall) {
         try { activePeerJsCall.close(); } catch (e) {}
@@ -2611,6 +3018,7 @@
       const localVid = document.getElementById('localVideo');
       const localPip = document.getElementById('localPipContainer');
       const remoteVid = document.getElementById('remoteVideo');
+      const remoteAud = document.getElementById('remoteAudioPlayer');
       const remoteImg = document.getElementById('remoteFrameStream');
       if (localVid) localVid.srcObject = null;
       if (localPip) localPip.classList.add('hidden');
@@ -2618,16 +3026,21 @@
         remoteVid.srcObject = null;
         remoteVid.classList.add('hidden');
       }
+      if (remoteAud) {
+        remoteAud.srcObject = null;
+      }
       if (remoteImg) {
         remoteImg.removeAttribute('src');
         remoteImg.classList.add('hidden');
       }
       document.getElementById('remotePeerOverlayTag').classList.add('hidden');
+      document.getElementById('liveAudioWaveBadge').classList.add('hidden');
     }
 
     function endWebRtcCall(notifyPeer) {
+      stopRingingSound();
       const endedId = activeCallId;
-      if (endedId) handledCallIds[endedId] = true;
+      if (endedId) markCallHandledGlobally(endedId);
       activeCallId = null;
       activeCallConnected = false;
       isOutgoingCaller = false;
